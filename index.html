@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>EndGam - Ajouter un Don</title>
+
+  <!-- Google Font & CSS -->
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700,900" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header>
+    <h1>🎮 mind arena Magazine</h1>
+    <nav>
+      <a href="#">Accueil</a>
+      <a href="#donation">Faire un don</a>
+      <a href="#">Contact</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h2>Game On !</h2>
+    <p>
+      Bienvenue sur le portail mindarena ! Découvrez nos dernières actualités gaming et soutenez-nous en faisant un don.
+    </p>
+    <a href="#donation" class="btn-don">Faire un don</a>
+  </section>
+
+  <section id="donation">
+    <div class="don-container">
+      <h2>Ajouter un Don</h2>
+      <form id="donForm">
+        <div>
+          <label>Montant (€)</label>
+          <input type="number" id="montant" step="0.01" placeholder="Entrez le montant">
+          <span class="error" id="montant-error"></span>
+        </div>
+        <div>
+          <label>Date du Don</label>
+          <input type="date" id="dateDon">
+          <span class="error" id="date-error"></span>
+        </div>
+        <div>
+          <label>Type de Don</label>
+          <select id="typeDon">
+            <option value="">-- Choisir un type --</option>
+            <option>Monétaire</option>
+            <option>Matériel</option>
+            <option>Temps</option>
+          </select>
+          <span class="error" id="type-error"></span>
+        </div>
+        <div>
+          <label>Organisation</label>
+          <select id="organisation">
+            <option value="">-- Sélectionner une organisation --</option>
+            <option>Association Enfants du Paradis</option>
+            <option>Croix-Rouge Tunisienne</option>
+            <option>Green Tunisia</option>
+          </select>
+          <span class="error" id="org-error"></span>
+        </div>
+        <button type="submit">Enregistrer</button>
+        <span class="success" id="success-message"></span>
+      </form>
+    </div>
+  </section>
+
+  <footer>
+    © 2025 mindarena — Page de démonstration Don
+  </footer>
+
+  <!-- Script JS -->
+  <script src="script.js"></script>
+</body>
+</html>
