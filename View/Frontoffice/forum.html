@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MindArena - Gaming Community</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="img/favicon.ico" rel="shortcut icon" />
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700,900" rel="stylesheet">
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/font-awesome.min.css">
+  <link rel="stylesheet" href="css/animate.css">
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+  /* === BASE THEME === */
+  body {
+    background: linear-gradient(45deg,#501755,#2d1854);
+    color:#fff;
+    font-family:'Roboto',sans-serif;
+    scroll-behavior:smooth;
+    overflow-x:hidden;
+    padding-top:120px;
+  }
+  section { padding:80px 0; }
+
+  /* === HEADER === */
+  .header-section {
+    position:fixed;
+    top:0;left:0;width:100%;
+    background:#081624;
+    z-index:999;
+    box-shadow:0 0 15px rgba(0,0,0,0.6);
+  }
+  .header-bar-warp {
+    padding:15px 40px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .mindarena-logo img {
+    max-height:80px;
+    filter:drop-shadow(0 0 6px rgba(176,27,165,0.8));
+    animation:neonPulse 3s infinite ease-in-out;
+  }
+  .main-menu li { display:inline-block; margin-left:20px; }
+  .main-menu a {
+    color:#fff; font-weight:600;
+    text-transform:uppercase;
+    transition:all 0.3s;
+  }
+  .main-menu a:hover { color:#b01ba5; text-shadow:0 0 8px #b01ba5; }
+  @keyframes neonPulse {
+    0%{filter:drop-shadow(0 0 4px #b01ba5);}
+    50%{filter:drop-shadow(0 0 14px #ff3ee7);}
+    100%{filter:drop-shadow(0 0 4px #b01ba5);}
+  }
+
+  /* === HERO === */
+  .hero {
+    height:100vh;
+    background:url('img/slider-bg-1.jpg') center/cover no-repeat;
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    text-align:center;
+  }
+  .hero h1 { font-size:70px;text-shadow:0 0 10px #b01ba5; }
+  .hero p { color:#ddd;margin-top:15px;font-size:18px; }
+  .hero .site-btn {
+    background:#fff;color:#081624;
+    border:none;padding:14px 25px;
+    border-radius:5px;font-weight:700;
+    margin-top:25px;
+    transition:0.3s;
+  }
+  .hero .site-btn:hover { background:#b01ba5;color:#fff; }
+
+  /* === FORUM CARDS === */
+  .forum-card {
+    background:rgba(255,255,255,0.05);
+    border-radius:8px;
+    overflow:hidden;
+    transition:all 0.3s ease;
+    padding-bottom:15px;
+  }
+  .forum-card:hover { transform:translateY(-6px); box-shadow:0 8px 25px rgba(0,0,0,0.4); }
+  .forum-card img { width:100%;border-bottom:3px solid #b01ba5; }
+  .forum-card h3 { color:#fff;margin-top:15px; }
+
+  /* === CREATE FORUM === */
+  .create-forum-form {
+    background:rgba(255,255,255,0.05);
+    padding:35px;
+    border-radius:10px;
+    max-width:700px;
+    margin:auto;
+  }
+  .create-forum-form label { color:#b01ba5;font-weight:700; }
+  .create-forum-form input, .create-forum-form textarea {
+    width:100%;border:none;border-radius:6px;
+    padding:12px;margin-top:8px;
+    background:rgba(255,255,255,0.1);color:#fff;
+  }
+  .create-forum-form button {
+    background:#b01ba5;border:none;padding:12px 25px;
+    border-radius:6px;color:#fff;font-weight:700;
+    margin-top:15px;transition:0.3s;
+  }
+  .create-forum-form button:hover { background:#ff3ee7; }
+
+  /* === TOPIC SECTION === */
+  .post-item { background:rgba(255,255,255,0.05);padding:20px;border-radius:8px;margin-bottom:15px; }
+  .post-author { color:#b01ba5;font-weight:700; }
+  .reply-form textarea {
+    width:100%;background:rgba(255,255,255,0.1);
+    border:none;border-radius:6px;color:#fff;
+    padding:10px;height:120px;margin-bottom:10px;
+  }
+  .reply-form button {
+    background:#b01ba5;color:#fff;border:none;
+    padding:10px 25px;border-radius:6px;
+  }
+
+  /* === LEADERBOARD === */
+  .leaderboard { background:rgba(255,255,255,0.05);padding:30px;border-radius:10px; }
+  .leaderboard-table { width:100%;border-collapse:collapse; }
+  .leaderboard-table th,.leaderboard-table td { padding:14px 10px;border-bottom:1px solid rgba(255,255,255,0.1); }
+  .leaderboard-table th { color:#b01ba5;text-transform:uppercase;letter-spacing:1px; }
+  .rank-1 { color:#ffd700; } .rank-2 { color:#c0c0c0; } .rank-3 { color:#cd7f32; }
+
+  /* === FOOTER === */
+  .footer-section { background:#081624;text-align:center;padding:30px 0;margin-top:60px; }
+  .footer-section img { max-height:60px;margin-bottom:10px; }
+  .footer-section p { color:#777; }
+
+  /* === ANIMATIONS === */
+  [data-animate] { opacity:0; transform:translateY(30px); transition:all 0.8s ease; }
+  [data-animate].visible { opacity:1; transform:translateY(0); }
+
+  /* ==== CHATBOT STYLES ==== */
+#mindbot-toggle {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: linear-gradient(135deg,#b01ba5,#501755);
+  border: none;
+  color: #fff;
+  font-size: 28px;
+  cursor: pointer;
+  box-shadow: 0 0 15px rgba(176,27,165,0.8);
+  z-index: 1001;
+  transition: all 0.3s ease;
+}
+#mindbot-toggle:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 20px #ff3ee7;
+}
+.mindbot-window {
+  position: fixed;
+  bottom: 110px;
+  right: 30px;
+  width: 350px;
+  height: 500px;
+  background: rgba(12, 6, 40, 0.95);
+  border: 2px solid #b01ba5;
+  border-radius: 16px;
+  display: none;
+  flex-direction: column;
+  box-shadow: 0 0 25px rgba(176,27,165,0.5);
+  overflow: hidden;
+  z-index: 1000;
+  animation: fadeIn 0.4s ease;
+}
+.mindbot-window.open { display: flex; }
+.mindbot-header {
+  background: #b01ba5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  color: #fff;
+  font-weight: bold;
+  font-size: 15px;
+}
+.mindbot-header img {
+  height: 30px;
+  border-radius: 6px;
+  margin-right: 8px;
+}
+.mindbot-close {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+}
+.mindbot-body {
+  flex: 1;
+  padding: 10px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 14px;
+}
+.bot-msg, .user-msg {
+  max-width: 80%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  line-height: 1.4;
+  animation: fadeInUp 0.4s ease;
+}
+.bot-msg {
+  align-self: flex-start;
+  background: rgba(255,255,255,0.1);
+  border-left: 3px solid #b01ba5;
+}
+.user-msg {
+  align-self: flex-end;
+  background: #b01ba5;
+  border-right: 3px solid #ff3ee7;
+}
+.mindbot-input {
+  display: flex;
+  border-top: 1px solid #b01ba5;
+}
+.mindbot-input input {
+  flex: 1;
+  background: #0c062e;
+  border: none;
+  color: #fff;
+  padding: 10px;
+  font-size: 14px;
+}
+.mindbot-input button {
+  background: #b01ba5;
+  border: none;
+  padding: 0 20px;
+  color: #fff;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.mindbot-input button:hover { background: #ff3ee7; }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header-section">
+  <div class="header-warp">
+    <div class="header-bar-warp">
+      <a href="#home" class="site-logo mindarena-logo"><img src="img/logo-mindarena.png" alt=""></a>
+      <nav class="top-nav-area w-100">
+        <ul class="main-menu primary-menu">
+          <li><a href="#home">Home</a></li>
+          <li><a href="#forums">Forums</a></li>
+          <li><a href="#create-forum">New Forum</a></li>
+          <li><a href="#topic">Discussion</a></li>
+          <li><a href="#create-topic">New Topic</a></li>
+          <li><a href="#leaderboard">Leaderboard</a></li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div data-animate>
+    <h1>Welcome to MindArena</h1>
+    <p>Where gaming meets emotion, connection, and purpose 🎮💜</p>
+    <button class="site-btn" onclick="document.getElementById('forums').scrollIntoView({behavior:'smooth'})">Explore Forums</button>
+  </div>
+</section>
+
+<!-- FORUM LIST -->
+<section id="forums">
+  <div class="container text-center" data-animate>
+    <h2>💬 Community Forums</h2>
+    <p>Join discussions and share your gaming passion.</p>
+    <div class="row mt-5">
+      <div class="col-md-4"><div class="forum-card"><img src="img/gd.jpeg" class="img-fluid"><h3>🎮 General Discussions</h3><p>Talk about new games and updates.</p></div></div>
+      <div class="col-md-4"><div class="forum-card"><img src="img/rpg.png" class="img-fluid"><h3>⚔️ RPG & Strategy</h3><p>Discuss builds, quests, and storylines.</p></div></div>
+      <div class="col-md-4"><div class="forum-card"><img src="img/mh.png" class="img-fluid"><h3>💡 Mental Health</h3><p>Share deep emotions with us.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CREATE NEW FORUM -->
+<section id="create-forum">
+  <div class="container text-center" data-animate>
+    <h2>🆕 Create a New Forum</h2>
+    <p>Start a brand new discussion space for your favorite topics.</p>
+    <div class="create-forum-form mt-4">
+      <form>
+        <label>Forum Title</label>
+        <input type="text" placeholder="Enter forum title..." required>
+        <label>Description</label>
+        <textarea placeholder="Describe your forum topic..." required></textarea>
+        <button type="submit">Create Forum</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- TOPIC DISCUSSION -->
+<section id="topic">
+  <div class="container" data-animate>
+    <h2 class="text-center mb-4">🎯 Sample Discussion</h2>
+    <div class="post-item"><div class="post-author">Luna</div><p>Has anyone tried the new co-op mode? It’s so much fun!</p></div>
+    <div class="post-item"><div class="post-author">PixelPro</div><p>The new ranking system adds so much competitiveness!</p></div>
+    <div class="reply-form mt-4"><h4>💬 Leave a Reply</h4><textarea placeholder="Write your message..."></textarea><button>Post Reply</button></div>
+  </div>
+</section>
+
+<!-- CREATE TOPIC -->
+<section id="create-topic">
+  <div class="container" data-animate>
+    <h2 class="text-center mb-4">📝 Create a New Topic</h2>
+    <div class="create-forum-form">
+      <form>
+        <label>Select Forum</label>
+        <input type="text" placeholder="Forum name (e.g., General Discussions)">
+        <label>Topic Title</label>
+        <input type="text" placeholder="Enter your topic title..." required>
+        <label>Content</label>
+        <textarea placeholder="Write your message..." required></textarea>
+        <button type="submit">Post Topic</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- LEADERBOARD -->
+<section id="leaderboard">
+  <div class="container text-center" data-animate>
+    <h2>🏆 Top Contributors</h2>
+    <p>Our most active and appreciated community members.</p>
+    <div class="leaderboard mt-4">
+      <table class="leaderboard-table">
+        <thead><tr><th>Rank</th><th>Player</th><th>Posts</th><th>Likes</th><th>Badge</th></tr></thead>
+        <tbody>
+          <tr><td class="rank-1">#1</td><td>Luna</td><td>58</td><td>421</td><td>⭐ Legend</td></tr>
+          <tr><td class="rank-2">#2</td><td>PixelPro</td><td>49</td><td>380</td><td>🔥 Expert</td></tr>
+          <tr><td class="rank-3">#3</td><td>ShadowNinja</td><td>37</td><td>300</td><td>⚔️ Warrior</td></tr>
+          <tr><td>#4</td><td>EchoFox</td><td>22</td><td>180</td><td>💡 Strategist</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer-section">
+  <div class="container">
+    <img src="img/logo-mindarena.png" alt="">
+    <p>© 2025 MindArena — Built for gamers, by gamers.</p>
+  </div>
+</footer>
+
+<!-- ==== SCRIPTS ==== -->
+<script src="js/jquery-3.2.1.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script>
+/* === ANIMATE ON SCROLL === */
+const animatedElements = document.querySelectorAll('[data-animate]');
+const observer = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.classList.add('visible');
+    }
+  });
+},{threshold:0.2});
+animatedElements.forEach(el=>observer.observe(el));
+</script>
+
+<!-- ==== MINDARENA CHATBOT ==== -->
+<div id="mindbot" class="mindbot-window">
+  <div class="mindbot-header">
+    <img src="img/logo-mindarena.png" alt="MindBot" class="mindbot-avatar">
+    <span>💬 MindBot Assistant</span>
+    <button class="mindbot-close" onclick="toggleBot()">×</button>
+  </div>
+
+  <div id="mindbot-body" class="mindbot-body">
+    <div class="bot-msg">👋 Hi, I’m <b>MindBot</b> — your virtual gaming assistant. How can I help you today?</div>
+  </div>
+
+  <div class="mindbot-input">
+    <input type="text" id="mindbot-input" placeholder="Type your message...">
+    <button id="mindbot-send"><i class="fa fa-paper-plane"></i></button>
+  </div>
+</div>
+
+<!-- Floating button -->
+<button id="mindbot-toggle" onclick="toggleBot()">💬</button>
+
+<!-- ==== CHATBOT SCRIPT ==== -->
+<script>
+const bot = document.getElementBy
+
+const body = document.getElementById('mindbot-body');
+const input = document.getElementById('mindbot-input');
+const sendBtn = document.getElementById('mindbot-send');
+
+function toggleBot() {
+  bot.classList.toggle('open');
+}
+
+sendBtn.onclick = () => {
+  const userMsg = input.value.trim();
+  if (!userMsg) return;
+  
+  // Display user message
+  const msg = document.createElement('div');
+  msg.className = 'user-msg';
+  msg.textContent = userMsg;
+  body.appendChild(msg);
+
+  // Scroll down
+  body.scrollTop = body.scrollHeight;
+
+  
+};
+</script>
+
+</body>
+</html>
