@@ -82,20 +82,20 @@ $organisations = $orgCtrl->getOrganisationsWithMontant();
 
         <form method="POST" id="donForm">
             <div class="form-group">
-                <label for="montant">Montant (€) *</label>
-                <input type="number" id="montant" name="montant" step="0.01" min="0.01" required placeholder="Ex: 50.00">
+                <label for="montant">Montant (€)</label>
+                <input type="number" id="montant" name="montant" placeholder="Ex: 50.00">
                 <span class="validation-error" id="montantError"></span>
             </div>
             
             <div class="form-group">
-                <label for="dateDon">Date du don *</label>
-                <input type="date" id="dateDon" name="dateDon" value="<?= date('Y-m-d') ?>" required>
+                <label for="dateDon">Date du don</label>
+                <input type="date" id="dateDon" name="dateDon" value="<?= date('Y-m-d') ?>">
                 <span class="validation-error" id="dateDonError"></span>
             </div>
             
             <div class="form-group">
-                <label for="typeDon">Type de don *</label>
-                <select id="typeDon" name="typeDon" required>
+                <label for="typeDon">Type de don</label>
+                <select id="typeDon" name="typeDon">
                     <option value="">-- Choisir un type --</option>
                     <option value="Monétaire">Monétaire</option>
                     <option value="Matériel">Matériel</option>
@@ -105,8 +105,8 @@ $organisations = $orgCtrl->getOrganisationsWithMontant();
             </div>
             
             <div class="form-group">
-                <label for="organisationId">Organisation *</label>
-                <select id="organisationId" name="organisationId" required>
+                <label for="organisationId">Organisation</label>
+                <select id="organisationId" name="organisationId">
                     <option value="">-- Sélectionner une organisation --</option>
                     <?php foreach ($organisations as $org): ?>
                         <option value="<?= $org['id'] ?>" data-montant="<?= $org['montant_total'] ?? 0 ?>">

@@ -115,9 +115,9 @@ $organisations = $orgCtrl->getOrganisationsWithMontant();
       <form method="POST" id="donForm">
         <div>
           <label>💶 Montant (€)</label>
-          <input type="number" name="montant" step="0.01" min="0.01" 
+          <input type="number" name="montant" 
                  value="<?= htmlspecialchars($_POST['montant'] ?? '') ?>" 
-                 placeholder="Ex: 50.00" required>
+                 placeholder="Ex: 50.00">
           <?php if (isset($errors['montant'])): ?>
             <span class="error-message"><?= $errors['montant'] ?></span>
           <?php endif; ?>
@@ -131,7 +131,7 @@ $organisations = $orgCtrl->getOrganisationsWithMontant();
         
         <div>
           <label>🎯 Type de Don</label>
-          <select name="typeDon" required>
+          <select name="typeDon">
             <option value="">-- Choisir un type --</option>
             <option value="Monétaire" <?= ($_POST['typeDon'] ?? '') == 'Monétaire' ? 'selected' : '' ?>>Monétaire</option>
             <option value="Matériel" <?= ($_POST['typeDon'] ?? '') == 'Matériel' ? 'selected' : '' ?>>Matériel</option>
@@ -144,7 +144,7 @@ $organisations = $orgCtrl->getOrganisationsWithMontant();
         
         <div>
           <label>🏢 Organisation Bénéficiaire</label>
-          <select name="organisationId" required>
+          <select name="organisationId">
             <option value="">-- Sélectionner une organisation --</option>
             <?php foreach ($organisations as $org): ?>
               <option value="<?= $org['id'] ?>" 

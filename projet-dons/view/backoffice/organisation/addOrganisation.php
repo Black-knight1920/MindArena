@@ -61,7 +61,6 @@ if ($_POST) {
         .validation-error { color: #dc3545; font-size: 0.85rem; margin-top: 5px; display: block; }
         .char-count { font-size: 0.8rem; color: #666; margin-top: 5px; }
         .char-count.warning { color: #ff9800; }
-        .required::after { content: " *"; color: #dc3545; }
     </style>
 </head>
 <body>
@@ -76,8 +75,8 @@ if ($_POST) {
 
         <form method="POST" id="orgForm">
             <div class="form-group">
-                <label for="nom" class="required">Nom de l'organisation</label>
-                <input type="text" id="nom" name="nom" required 
+                <label for="nom">Nom de l'organisation</label>
+                <input type="text" id="nom" name="nom" 
                        placeholder="Ex: Médecins Sans Frontières"
                        maxlength="100">
                 <span class="validation-error" id="nomError"></span>
@@ -85,8 +84,8 @@ if ($_POST) {
             </div>
             
             <div class="form-group">
-                <label for="description" class="required">Description</label>
-                <textarea id="description" name="description" required 
+                <label for="description">Description</label>
+                <textarea id="description" name="description" 
                           placeholder="Décrivez l'organisation, sa mission, ses objectifs..."
                           maxlength="500"></textarea>
                 <span class="validation-error" id="descriptionError"></span>
