@@ -17,7 +17,6 @@ $dons = $donCtrl->listDon();
         th { background-color: #081624; color: white; }
         .btn { padding: 8px 16px; text-decoration: none; border-radius: 5px; font-size: 14px; margin: 2px; }
         .btn-add { background: #4CAF50; color: white; }
-        .btn-edit { background: #2196F3; color: white; }
         .btn-delete { background: #f44336; color: white; }
         .btn-back { background: #FF9800; color: white; }
         .montant { font-weight: bold; color: #2E7D32; }
@@ -37,6 +36,8 @@ $dons = $donCtrl->listDon();
                 <a href="../../../backoffice.php" class="btn" style="background: #6c757d;">Accueil Admin</a>
             </div>
         </div>
+        
+        <!-- SUPPRIMÉ : La note d'information qui était ici -->
         
         <table>
             <thead>
@@ -65,9 +66,8 @@ $dons = $donCtrl->listDon();
                         <td><?= htmlspecialchars($d['typeDon']) ?></td>
                         <td><strong><?= htmlspecialchars($d['organisation_nom'] ?? 'N/A') ?></strong></td>
                         <td>
-                            <a href="modifyDon.php?id=<?= $d['id'] ?>" class="btn btn-edit">Modifier</a>
                             <a href="deleteDon.php?id=<?= $d['id'] ?>" class="btn btn-delete" 
-                               onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce don ?')">
+                               onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce don ? Cette action est irréversible.')">
                                Supprimer
                             </a>
                         </td>

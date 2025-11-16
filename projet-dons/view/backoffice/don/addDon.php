@@ -9,13 +9,24 @@ $message = '';
 $messageType = '';
 
 if ($_POST) {
-    try {
+    // Validation des données avant création de l'objet
+    $montant = $_POST['montant'] ?? '';
+    $dateDon = $_POST['dateDon'] ?? '';
+    $typeDon = $_POST['typeDon'] ?? '';
+    $organisationId = $_POST['organisationId'] ?? '';
+    
+    // Validation basique des champs requis
+    if (empty($montant) || empty($dateDon) || empty($typeDon) || empty($organisationId)) {
+        $message = " Tous les champs sont obligatoires";
+        $messageType = 'error';
+    } else {
+        // Création de l'objet Don
         $don = new Don(
             null,
-            (float)$_POST['montant'],
-            new DateTime($_POST['dateDon']),
-            $_POST['typeDon'],
-            (int)$_POST['organisationId']
+            (float)$montant,
+            new DateTime($dateDon),
+            $typeDon,
+            (int)$organisationId
         );
         
         // Validation côté serveur
@@ -26,20 +37,19 @@ if ($_POST) {
                 $message = "✅ Don ajouté avec succès!";
                 $messageType = 'success';
                 header("refresh:2;url=donList.php");
+            } else {
+                $message = " Erreur lors de l'ajout du don";
+                $messageType = 'error';
             }
         } else {
-            $message = "❌ Erreurs de validation:<br>• " . implode("<br>• ", $validationErrors);
+            $message = " Erreurs de validation:<br> " . implode("<br> ", $validationErrors);
             $messageType = 'error';
         }
-        
-    } catch (Exception $e) {
-        $message = "❌ Erreur: " . $e->getMessage();
-        $messageType = 'error';
     }
 }
 
 // Récupérer les organisations avec leurs montants
-$organisations = $orgCtrl->getOrganisationsWithMontant();
+$organisations = $orgCtrl->listOrganisations();
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -83,7 +93,7 @@ $organisations = $orgCtrl->getOrganisationsWithMontant();
         <form method="POST" id="donForm">
             <div class="form-group">
                 <label for="montant">Montant (€)</label>
-                <input type="number" id="montant" name="montant" placeholder="Ex: 50.00">
+                <input type="number" id="montant" name="montant" placeholder="Ex: 50.00" step="0.01" min="0.01" max="1000000">
                 <span class="validation-error" id="montantError"></span>
             </div>
             

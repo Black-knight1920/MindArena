@@ -8,7 +8,7 @@ $orgCtrl = new OrganisationController();
 
 // Récupérer quelques statistiques pour le dashboard
 $dons = $donCtrl->listDon()->fetchAll();
-$organisations = $orgCtrl->getOrganisationsWithMontant();
+$organisations = $orgCtrl->listOrganisations(); // CHANGÉ ICI
 
 $totalDons = 0;
 foreach ($dons as $don) {
@@ -25,7 +25,7 @@ $moyenneDon = $totalOrganisations > 0 ? $totalDons / $totalOrganisations : 0;
   <title>Backoffice - Mind Arena</title>
   <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700,900" rel="stylesheet">
   <style>
-    /* ----- Global ----- */
+     /* ----- Global ----- */
     * {
         margin: 0;
         padding: 0;
@@ -266,6 +266,29 @@ $moyenneDon = $totalOrganisations > 0 ? $totalDons / $totalOrganisations : 0;
         font-size: 0.95rem;
     }
 
+    /* ----- Information Box ----- */
+    .info-box {
+        background: rgba(255, 193, 7, 0.1);
+        border: 2px solid #ffc107;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px auto;
+        max-width: 800px;
+        text-align: center;
+    }
+
+    .info-box h3 {
+        color: #ffc107;
+        margin-bottom: 10px;
+        font-size: 1.2rem;
+    }
+
+    .info-box p {
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0;
+        font-size: 0.95rem;
+    }
+
     /* ----- Footer ----- */
     footer {
         background: #190d36;
@@ -309,6 +332,10 @@ $moyenneDon = $totalOrganisations > 0 ? $totalDons / $totalOrganisations : 0;
             font-size: 0.9rem;
         }
     }
+
+
+
+ 
   </style>
 </head>
 
@@ -330,6 +357,15 @@ $moyenneDon = $totalOrganisations > 0 ? $totalDons / $totalOrganisations : 0;
       Suivez les statistiques et optimisez votre plateforme de dons gaming.
     </p>
   </section>
+
+  <!-- Information sur l'immuabilité des dons -->
+  <div class="info-box">
+    <h3>⚠️ Information Importante</h3>
+    <p>
+      <strong>Les dons ne peuvent pas être modifiés</strong> après enregistrement pour garantir l'intégrité des données financières.<br>
+      En cas d'erreur, veuillez supprimer le don et en créer un nouveau.
+    </p>
+  </div>
 
   <section class="dashboard">
     <div class="dashboard-grid">

@@ -5,27 +5,37 @@ require_once __DIR__."/../Model/Don.php";
 class DonController {
     
     public function addDon(Don $don) {
-        // Validation avant insertion
+        //validation avant insertion
         $validationErrors = $this->validateDon($don);
         if (!empty($validationErrors)) {
-            throw new Exception(implode(", ", $validationErrors));
+            echo "Erreur : données du don invalides.";
+            return false;
         }
         
         $sql = "INSERT INTO don (montant, dateDon, typeDon, organisationId) 
                 VALUES (:montant, :dateDon, :typeDon, :organisationId)";
         $db = config::getConnexion();
         $q = $db->prepare($sql);
-        return $q->execute([
+        $result = $q->execute([
             ':montant' => $don->getMontant(),
             ':dateDon' => $don->getDateDon()->format('Y-m-d'),
             ':typeDon' => $don->getTypeDon(),
             ':organisationId' => $don->getOrganisationId()
         ]);
+        
+        // Mise à jour automatique du montant total
+        if ($result) {
+            $this->updateMontantOrganisation($don->getOrganisationId());
+        }
+        
+        return $result;
     }
 
     public function listDon() {
         $sql = "SELECT d.*, o.nom as organisation_nom,
-                (SELECT COALESCE(SUM(d2.montant), 0) FROM don d2 WHERE d2.organisationId = o.id) as montant_total_organisation
+                (SELECT COALESCE(SUM(d2.montant), 0) 
+                FROM don d2 
+                WHERE d2.organisationId = o.id) as montant_total_organisation
                 FROM don d 
                 LEFT JOIN organisation o ON d.organisationId = o.id 
                 ORDER BY d.dateDon DESC";
@@ -45,33 +55,24 @@ class DonController {
         return $q->fetch();
     }
 
-    public function updateDon(int $id, Don $don) {
-        // Validation avant mise à jour
-        $validationErrors = $this->validateDon($don);
-        if (!empty($validationErrors)) {
-            throw new Exception(implode(", ", $validationErrors));
-        }
-        
-        $sql = "UPDATE don SET 
-                montant = :montant, dateDon = :dateDon, 
-                typeDon = :typeDon, organisationId = :organisationId 
-                WHERE id = :id";
-        $db = config::getConnexion();
-        $q = $db->prepare($sql);
-        return $q->execute([
-            ':id' => $id,
-            ':montant' => $don->getMontant(),
-            ':dateDon' => $don->getDateDon()->format('Y-m-d'),
-            ':typeDon' => $don->getTypeDon(),
-            ':organisationId' => $don->getOrganisationId()
-        ]);
-    }
-
+    // SUPPRIMÉ : Méthode updateDon - Les dons ne peuvent pas être modifiés
+    
     public function deleteDon(int $id) {
+        // Récupérer l'organisation avant suppression
+        $don = $this->getDon($id);
+        $organisationId = $don['organisationId'];
+        
         $sql = "DELETE FROM don WHERE id = :id";
         $db = config::getConnexion();
         $q = $db->prepare($sql);
-        return $q->execute([':id' => $id]);
+        $result = $q->execute([':id' => $id]);
+        
+        // Mise à jour automatique du montant total
+        if ($result) {
+            $this->updateMontantOrganisation($organisationId);
+        }
+        
+        return $result;
     }
 
     public function getOrganisationsForSelect() {
@@ -83,9 +84,26 @@ class DonController {
         return $db->query($sql)->fetchAll();
     }
 
-    /**
-     * Validation des données du don
-     */
+   // Mise à jour du montant total d'une organisation
+    public function updateMontantOrganisation(int $organisationId) {
+        $sql = "UPDATE organisation 
+                SET montant_total = (
+                    SELECT COALESCE(SUM(montant), 0) 
+                    FROM don 
+                    WHERE organisationId = :organisationId
+                )
+                WHERE id = :organisationId";
+        
+        $db = config::getConnexion();
+        $q = $db->prepare($sql);
+        return $q->execute([
+            ':organisationId' => $organisationId
+        ]);
+    }
+
+    
+      //Validation des données du don
+
     public function validateDon(Don $don) {
         $errors = [];
         

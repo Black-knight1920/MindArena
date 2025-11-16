@@ -16,7 +16,7 @@ class Don {
         $this->organisationNom = $organisationNom;
     }
 
-    // Getters
+    // Getters(accéder)
     public function getId(): ?int { return $this->id; }
     public function getMontant(): float { return $this->montant; }
     public function getDateDon(): DateTime { return $this->dateDon; }
@@ -24,7 +24,7 @@ class Don {
     public function getOrganisationId(): int { return $this->organisationId; }
     public function getOrganisationNom(): ?string { return $this->organisationNom; }
 
-    // Setters
+    // Setters(modifier)
     public function setMontant(float $montant): void { $this->montant = $montant; }
     public function setDateDon(DateTime $dateDon): void { $this->dateDon = $dateDon; }
     public function setTypeDon(string $typeDon): void { $this->typeDon = $typeDon; }

@@ -6,7 +6,7 @@ $orgCtrl = new OrganisationController();
 $donCtrl = new DonController();
 
 // Récupérer les organisations avec leurs montants calculés
-$organisations = $orgCtrl->getOrganisationsWithMontant();
+$organisations = $orgCtrl->listOrganisations(); // CHANGÉ ICI
 
 // Calculer le total général
 $totalGeneral = 0;

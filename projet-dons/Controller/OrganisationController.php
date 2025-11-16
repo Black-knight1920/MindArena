@@ -5,29 +5,26 @@ require_once __DIR__."/../Model/Organisation.php";
 class OrganisationController {
     
     public function addOrganisation(Organisation $org) {
-        // Validation avant insertion
-        $validationErrors = $this->validateOrganisation($org);
-        if (!empty($validationErrors)) {
-            throw new Exception(implode(", ", $validationErrors));
-        }
-        
-        // Utiliser les noms de colonnes existants dans la base
-        $sql = "INSERT INTO organisation (nom, description) 
-                VALUES (:nom, :description)";
-        $db = config::getConnexion();
-        
-        try {
-            $q = $db->prepare($sql);
-            $result = $q->execute([
-                ':nom' => $org->getNom(),
-                ':description' => $org->getDescription()
-            ]);
-            
-            return $result;
-        } catch (Exception $e) {
-            throw new Exception("Erreur: " . $e->getMessage());
-        }
+    $validationErrors = $this->validateOrganisation($org);
+    if (!empty($validationErrors)) {
+        echo "Erreur : organisation invalide.";
+        return false;
     }
+
+    // Préparer la requête SQL
+    $sql = "INSERT INTO organisation (nom, description) 
+            VALUES (:nom, :description)";
+    $db = config::getConnexion();
+    $q = $db->prepare($sql);
+    $result = $q->execute([':nom' => $org->getNom(),':description' => $org->getDescription()]);
+    
+    if (!$result) {
+        echo "Erreur : impossible d'ajouter l'organisation.";
+        return false;
+    }
+    return true;
+}
+
 
     public function listOrganisations() {
         $sql = "SELECT o.*, 
@@ -53,7 +50,8 @@ class OrganisationController {
         // Validation avant mise à jour
         $validationErrors = $this->validateOrganisation($org);
         if (!empty($validationErrors)) {
-            throw new Exception(implode(", ", $validationErrors));
+            echo "Erreur : organisation invalide.";
+            return false;
         }
         
         // Utiliser les noms de colonnes existants
@@ -76,26 +74,7 @@ class OrganisationController {
         return $q->execute([':id' => $id]);
     }
 
-    public function getActiveOrganisations() {
-        $sql = "SELECT o.*,
-                (SELECT COALESCE(SUM(d.montant), 0) FROM don d WHERE d.organisationId = o.id) as montant_total
-                FROM organisation o 
-                ORDER BY o.nom";
-        $db = config::getConnexion();
-        return $db->query($sql)->fetchAll();
-    }
 
-    /**
-     * Récupère les organisations avec leur montant total calculé
-     */
-    public function getOrganisationsWithMontant() {
-        $sql = "SELECT o.*, 
-                (SELECT COALESCE(SUM(d.montant), 0) FROM don d WHERE d.organisationId = o.id) as montant_total
-                FROM organisation o 
-                ORDER BY o.nom";
-        $db = config::getConnexion();
-        return $db->query($sql)->fetchAll();
-    }
 
     /**
      * Récupère le montant total d'une organisation spécifique
