@@ -1,0 +1,10 @@
+RewriteEngine On
+RewriteBase /mindarena_forum/
+
+# ✅ ADMIN CLEAN URL ROUTING (FIXED)
+# Route ANY URL starting with /mindarena_forum/admin to admin.php
+RewriteCond %{REQUEST_URI} ^/mindarena_forum/admin
+RewriteRule ^admin/?(.*)$ admin.php [L,QSA]
+
+# ✅ FRONT ROUTING (KEEP AS IT IS – DO NOT TOUCH)
+RewriteRule ^front/(.*)$ index.php [L,QSA]

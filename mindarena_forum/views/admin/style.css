@@ -1,0 +1,115 @@
+/* ===========================
+   GLOBAL THEME (EndGame Style)
+=========================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;600;700&display=swap');
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Work Sans', sans-serif;
+    background: linear-gradient(45deg, #501755, #2d1854);
+    color: white;
+    display: flex;
+}
+
+/* ===========================
+     SIDEBAR
+=========================== */
+
+.sidebar {
+    width: 260px;
+    min-height: 100vh;
+    background: #0b0d1a;
+    padding: 25px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.4);
+}
+
+.logo {
+    font-size: 24px;
+    margin-bottom: 40px;
+    color: #ff48df;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.logo span {
+    font-size: 14px;
+    color: #aaa;
+}
+
+.sidebar nav {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.sidebar nav a {
+    text-decoration: none;
+    color: #bbb;
+    font-size: 16px;
+    padding: 12px 15px;
+    border-radius: 8px;
+    transition: .3s;
+}
+
+.sidebar nav a:hover,
+.sidebar nav a.active {
+    background: #a90fa8;
+    color: white;
+    font-weight: 600;
+}
+
+/* ===========================
+     MAIN CONTENT
+=========================== */
+
+.main {
+    padding: 50px;
+    width: 100%;
+}
+
+.page-title {
+    margin-top: 0;
+    font-size: 38px;
+    font-weight: 700;
+}
+
+.subtitle {
+    opacity: .75;
+    margin-bottom: 40px;
+}
+
+/* ===========================
+     DASHBOARD CARDS
+=========================== */
+
+.cards {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.card {
+    width: 260px;
+    padding: 30px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 14px;
+    text-align: center;
+    box-shadow: 0 0 12px rgba(0,0,0,0.35);
+    backdrop-filter: blur(4px);
+}
+
+.card h3 {
+    margin: 0;
+    font-size: 42px;
+    color: #ff7afa;
+    font-weight: 700;
+}
+
+.card p {
+    margin-top: 10px;
+    font-size: 16px;
+    opacity: 0.7;
+}

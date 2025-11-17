@@ -1,0 +1,141 @@
+/* RESET */
+*{margin:0;padding:0;box-sizing:border-box;font-family:"Roboto",sans-serif;}
+body{
+    background:#130020;
+    color:white;
+}
+
+/* HEADER */
+.ma-header{
+    background:#0b0b1d;
+    padding:20px 0;
+    box-shadow:0 0 10px rgba(0,0,0,.4);
+}
+.ma-header-inner{
+    max-width:1100px;
+    margin:auto;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+.ma-header .logo{
+    font-size:26px;
+    font-weight:bold;
+    color:#d43cff;
+}
+.ma-nav a{
+    color:white;
+    margin-left:20px;
+    text-transform:uppercase;
+    font-size:14px;
+    letter-spacing:1px;
+    transition:.2s;
+}
+.ma-nav a:hover{color:#d43cff;}
+
+/* MAIN WRAPPER */
+.ma-main{
+    max-width:1100px;
+    margin:60px auto;
+    padding:20px;
+}
+
+/* TITLES */
+.page-title h1{
+    font-size:40px;
+    color:#d43cff;
+    text-transform:uppercase;
+    margin-bottom:10px;
+}
+.page-title p{
+    opacity:.8;
+    margin-bottom:40px;
+}
+
+/* GRID */
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+    gap:20px;
+}
+
+/* CARD */
+.card{
+    background:#1d0b33;
+    padding:20px;
+    border-radius:8px;
+    border:1px solid rgba(255,255,255,.1);
+}
+.card h2{
+    margin-bottom:10px;
+}
+.card p{
+    opacity:.8;
+    margin-bottom:15px;
+}
+
+/* BUTTONS */
+.btn{
+    display:inline-block;
+    padding:8px 14px;
+    border-radius:6px;
+    text-transform:uppercase;
+    font-size:13px;
+    font-weight:bold;
+    transition:.2s;
+}
+.btn-primary{
+    background:#d43cff;
+    color:white;
+}
+.btn-primary:hover{background:#ff58ff;}
+.btn-danger{
+    background:#c0392b;
+    color:white;
+}
+.btn-danger:hover{background:#e74c3c;}
+
+/* FORM */
+.form-box{
+    background:#1d0b33;
+    padding:30px;
+    border-radius:8px;
+    border:1px solid rgba(255,255,255,.15);
+    max-width:700px;
+    margin:auto;
+}
+
+label{
+    display:block;
+    margin-bottom:8px;
+    font-weight:bold;
+}
+
+input,textarea{
+    width:100%;
+    padding:10px;
+    background:#2b1547;
+    color:white;
+    border:none;
+    border-radius:6px;
+    margin-bottom:20px;
+}
+textarea{height:160px;resize:none;}
+
+.btn-submit{
+    width:100%;
+    padding:12px;
+    background:#d43cff;
+    color:white;
+    border:none;
+    border-radius:6px;
+}
+
+/* FOOTER */
+.ma-footer{
+    text-align:center;
+    padding:20px;
+    margin-top:40px;
+    background:#0b0b1d;
+    color:#ccc;
+}
