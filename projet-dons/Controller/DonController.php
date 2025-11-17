@@ -55,7 +55,6 @@ class DonController {
         return $q->fetch();
     }
 
-    // SUPPRIMÉ : Méthode updateDon - Les dons ne peuvent pas être modifiés
     
     public function deleteDon(int $id) {
         // Récupérer l'organisation avant suppression
@@ -127,7 +126,7 @@ class DonController {
         }
         
         // Validation du type
-        $allowedTypes = ['Monétaire', 'Matériel', 'Temps'];
+        $allowedTypes = ['Monétaire', 'Matériel']; 
         if (!in_array($don->getTypeDon(), $allowedTypes)) {
             $errors[] = "Type de don invalide";
         }

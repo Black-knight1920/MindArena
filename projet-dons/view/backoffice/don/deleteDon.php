@@ -5,11 +5,7 @@ $donCtrl = new DonController();
 $id = $_GET['id'] ?? 0;
 
 if ($id) {
-    try {
-        $donCtrl->deleteDon($id);
-    } catch (Exception $e) {
-        // Gérer l'erreur si nécessaire
-    }
+    $donCtrl->deleteDon($id);
 }
 
 header("Location: donList.php");

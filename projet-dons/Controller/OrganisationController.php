@@ -76,9 +76,7 @@ class OrganisationController {
 
 
 
-    /**
-     * Récupère le montant total d'une organisation spécifique
-     */
+    //Récupère le montant total d'une organisation spécifique
     public function getMontantOrganisation(int $organisationId) {
         $sql = "SELECT COALESCE(SUM(montant), 0) as total FROM don WHERE organisationId = :organisationId";
         $db = config::getConnexion();
@@ -88,9 +86,7 @@ class OrganisationController {
         return $result ? (float)$result['total'] : 0.0;
     }
 
-    /**
-     * Validation des données de l'organisation
-     */
+    //Validation des données de l'organisation
     public function validateOrganisation(Organisation $org) {
         $errors = [];
         

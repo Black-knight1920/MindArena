@@ -31,7 +31,7 @@ if ($_POST) {
         
         // Validation côté serveur
         $validationErrors = $donCtrl->validateDon($don);
-        
+        //Ajout dans la base de données
         if (empty($validationErrors)) {
             if ($donCtrl->addDon($don)) {
                 $message = "✅ Don ajouté avec succès!";
@@ -48,7 +48,7 @@ if ($_POST) {
     }
 }
 
-// Récupérer les organisations avec leurs montants
+// Récupérer les organisations avec leurs montants depuis la BD
 $organisations = $orgCtrl->listOrganisations();
 ?>
 <!DOCTYPE html>
@@ -57,27 +57,92 @@ $organisations = $orgCtrl->listOrganisations();
     <meta charset="UTF-8">
     <title>Ajouter un Don</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; background: #f5f5f5; }
-        .container { max-width: 600px; margin: 20px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: bold; color: #333; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; box-sizing: border-box; transition: all 0.3s; }
-        input:focus, select:focus { outline: none; border-color: #4CAF50; box-shadow: 0 0 5px rgba(76,175,80,0.3); }
-        button { background: #4CAF50; color: white; padding: 12px 30px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin-right: 10px; transition: background 0.3s; }
-        button:hover { background: #45a049; }
-        .message { padding: 15px; margin: 20px 0; border-radius: 5px; }
-        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .btn-cancel { background: #6c757d; color: white; text-decoration: none; padding: 12px 20px; border-radius: 5px; display: inline-block; transition: background 0.3s; }
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; background: #f5f5f5ff; }
+        .container { 
+            max-width: 600px; 
+            margin: 20px auto; 
+            background: white;
+            padding: 30px; 
+            border-radius: 10px;
+            box-shadow: 0 2px 10px #0000001a; }
+        
+        .form-group { 
+            margin-bottom: 20px; }
+        label { 
+            display: block;
+            margin-bottom: 8px; 
+            font-weight: bold; 
+            color: #333; }
+        /*champs de saisie*/
+        input, select { 
+            width: 100%; 
+            padding: 10px; 
+            border: 1px solid #ddd; 
+            border-radius: 5px; 
+            font-size: 16px; 
+            box-sizing: border-box; 
+            transition: all 0.3s; }
+        input:focus, select:focus { 
+            outline: none; 
+            border-color: #4CAF50; 
+            box-shadow: 0 0 5px #4caf504d; }
+        button { 
+            background: #4CAF50; 
+            color: white; 
+            border: none; 
+            border-radius: 6px;
+            padding: 14px 20px; 
+            font-size: 16px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            width: 30%; 
+            transition: background-color 0.3s;
+            margin-top: 10px; }
+        button:hover { background-color: #2980b9; }
+        
+        .message { 
+            padding: 15px; 
+            margin: 20px 0; 
+            border-radius: 5px; }
+        .success { 
+            background: #d4edda; 
+            color: #155724; 
+            border: 1px solid #261c82ff; }
+        .error { 
+            background: #f8d7da; 
+            color: #721c24; 
+            border: 1px solid #f5c6cb; }
+        .btn-cancel { background: #6c757d; 
+            color: white; 
+            text-decoration: none; 
+            padding: 12px 20px; 
+            border-radius: 5px; 
+            display: inline-block; }
         .btn-cancel:hover { background: #5a6268; }
         
         /* Styles de validation */
-        .error-field { border-color: #dc3545 !important; box-shadow: 0 0 5px rgba(220,53,69,0.3) !important; }
-        .success-field { border-color: #28a745 !important; box-shadow: 0 0 5px rgba(40,167,69,0.3) !important; }
-        .validation-error { color: #dc3545; font-size: 0.85rem; margin-top: 5px; display: block; }
-        .montant-info { background: #f8f9fa; padding: 10px; border-radius: 5px; margin-top: 5px; font-size: 0.9em; }
+        .error-field { 
+            border-color: #dc3545 !important; 
+            box-shadow: 0 0 5px rgba(220,53,69,0.3) !important; }
+        .success-field {
+            border-color: #28a745 !important;
+            box-shadow: 0 0 5px rgba(40,167,69,0.3) !important; }
+        .validation-error { 
+            color: #dc3545;
+            font-size: 0.85rem; 
+            margin-top: 5px; display: block; }
+        .montant-info { 
+            background: #f8f9fa; 
+            padding: 10px; 
+            border-radius: 5px; 
+            margin-top: 5px; 
+            font-size: 0.9em; }
         .montant-actuel { color: #666; }
-        .montant-futur { color: #4CAF50; font-weight: bold; }
+        .montant-futur { 
+            color: #4CAF50; 
+            font-weight: bold; }
     </style>
 </head>
 <body>
@@ -85,7 +150,7 @@ $organisations = $orgCtrl->listOrganisations();
         <h1>➕ Ajouter un Don</h1>
         
         <?php if ($message): ?>
-            <div class="message <?= $messageType ?>">
+            <div class="message <?= $messageType ?>"> 
                 <?= $message ?>
             </div>
         <?php endif; ?>
@@ -93,13 +158,13 @@ $organisations = $orgCtrl->listOrganisations();
         <form method="POST" id="donForm">
             <div class="form-group">
                 <label for="montant">Montant (€)</label>
-                <input type="number" id="montant" name="montant" placeholder="Ex: 50.00" step="0.01" min="0.01" max="1000000">
+                <input type="number" id="montant" name="montant" placeholder="Ex: 50.00" >
                 <span class="validation-error" id="montantError"></span>
             </div>
             
             <div class="form-group">
                 <label for="dateDon">Date du don</label>
-                <input type="date" id="dateDon" name="dateDon" value="<?= date('Y-m-d') ?>">
+                <input type="date" id="dateDon" name="dateDon" >
                 <span class="validation-error" id="dateDonError"></span>
             </div>
             
@@ -109,18 +174,17 @@ $organisations = $orgCtrl->listOrganisations();
                     <option value="">-- Choisir un type --</option>
                     <option value="Monétaire">Monétaire</option>
                     <option value="Matériel">Matériel</option>
-                    <option value="Temps">Temps</option>
                 </select>
                 <span class="validation-error" id="typeDonError"></span>
             </div>
             
             <div class="form-group">
-                <label for="organisationId">Organisation</label>
+                <label for="organisationId">Organisation</label> 
                 <select id="organisationId" name="organisationId">
                     <option value="">-- Sélectionner une organisation --</option>
                     <?php foreach ($organisations as $org): ?>
                         <option value="<?= $org['id'] ?>" data-montant="<?= $org['montant_total'] ?? 0 ?>">
-                            <?= htmlspecialchars($org['nom']) ?> 
+                            <?= htmlspecialchars($org['nom']) ?> <!-- protection XSS (script) -->
                             (Total: <?= number_format($org['montant_total'] ?? 0, 2) ?> €)
                         </option>
                     <?php endforeach; ?>
@@ -152,7 +216,7 @@ $organisations = $orgCtrl->listOrganisations();
                 document.getElementById('montantActuel').textContent = montantActuel.toFixed(2) + ' €';
                 document.getElementById('montantFutur').textContent = totalApresDon.toFixed(2) + ' €';
             } else {
-                document.getElementById('montantInfo').style.display = 'none';
+                document.getElementById('montantInfo').style.display = 'none'; //rend l'element invisible
             }
         });
 

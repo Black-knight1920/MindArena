@@ -10,12 +10,34 @@ $dons = $donCtrl->listDon();
     <meta charset="UTF-8">
     <title>Gestion des Dons</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        table { border-collapse: collapse; width: 100%; margin: 20px 0; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: #081624; color: white; }
-        .btn { padding: 8px 16px; text-decoration: none; border-radius: 5px; font-size: 14px; margin: 2px; }
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background: #f5f5f5; }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 20px; 
+            border-radius: 10px; 
+            box-shadow: 0 2px 10px #0000001a; }
+        table { 
+            border-collapse: collapse; 
+            width: 100%; 
+            margin: 20px 0; }
+        th, td { 
+            border: 1px solid #ddd; 
+            padding: 12px; 
+            text-align: center; }
+        th { 
+            background-color: #081624; 
+            color: white; }
+        .btn { 
+            padding: 8px 16px; 
+            text-decoration: none; 
+            border-radius: 5px; 
+            font-size: 14px; 
+            margin: 2px; }
         .btn-add { background: #4CAF50; color: white; }
         .btn-delete { background: #f44336; color: white; }
         .btn-back { background: #FF9800; color: white; }
@@ -23,7 +45,7 @@ $dons = $donCtrl->listDon();
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .type-monetaire { background: #e8f5e8; }
         .type-materiel { background: #e3f2fd; }
-        .type-temps { background: #fff3e0; }
+       
     </style>
 </head>
 <body>
@@ -37,8 +59,6 @@ $dons = $donCtrl->listDon();
             </div>
         </div>
         
-        <!-- SUPPRIMÉ : La note d'information qui était ici -->
-        
         <table>
             <thead>
                 <tr>
@@ -50,7 +70,7 @@ $dons = $donCtrl->listDon();
                     <th>Actions</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody> <!--En-tête du tableau -->
                 <?php 
                 $donsData = $dons->fetchAll();
                 if (empty($donsData)): ?>

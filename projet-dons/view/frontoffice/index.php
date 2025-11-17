@@ -12,15 +12,57 @@ $errors = [];
 
 // Traitement du formulaire
 if ($_POST && isset($_POST['montant'])) {
-    try {
-        // ... (le reste du code de traitement reste inchangé) ...
-    } catch (Exception $e) {
-        $message = "❌ Erreur: " . $e->getMessage();
+    // CRÉATION DU DON - À COMPLÉTER AVEC VOTRE LOGIQUE
+    $montant = floatval($_POST['montant']);
+    $dateDon = $_POST['dateDon'];
+    $typeDon = $_POST['typeDon'];
+    $organisationId = intval($_POST['organisationId']);
+    
+    // Validation des données
+    if (empty($montant) || $montant <= 0) {
+        $errors['montant'] = "Le montant doit être supérieur à 0";
+    }
+    if (empty($dateDon)) {
+        $errors['dateDon'] = "La date est obligatoire";
+    }
+    if (empty($typeDon)) {
+        $errors['typeDon'] = "Veuillez choisir un type de don";
+    }
+    if (empty($organisationId)) {
+        $errors['organisationId'] = "Veuillez sélectionner une organisation";
+    }
+    
+    // Si pas d'erreurs, créer le don
+    if (empty($errors)) {
+        $don = new Don(
+            null,
+            $montant,
+            new DateTime($dateDon),
+            $typeDon,
+            $organisationId
+        );
+        
+        // Validation et ajout
+        $validationErrors = $donCtrl->validateDon($don);
+        if (empty($validationErrors)) {
+            if ($donCtrl->addDon($don)) {
+                $message = "✅ Don ajouté avec succès!";
+                $success = true;
+                // Réinitialiser le formulaire
+                $_POST = [];
+            } else {
+                $message = "❌ Erreur lors de l'ajout du don";
+            }
+        } else {
+            $message = "❌ Erreurs de validation:<br>" . implode("<br>", $validationErrors);
+        }
+    } else {
+        $message = "❌ Veuillez corriger les erreurs ci-dessous";
     }
 }
 
 // Récupérer les organisations avec leurs montants
-$organisations = $orgCtrl->listOrganisations(); // CHANGÉ ICI
+$organisations = $orgCtrl->listOrganisations();
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -85,6 +127,9 @@ $organisations = $orgCtrl->listOrganisations(); // CHANGÉ ICI
           <label>📅 Date du Don</label>
           <input type="date" name="dateDon" 
                  value="<?= htmlspecialchars($_POST['dateDon'] ?? '') ?>">
+          <?php if (isset($errors['dateDon'])): ?>
+            <span class="error-message"><?= $errors['dateDon'] ?></span>
+          <?php endif; ?>
         </div>
         
         <div>
@@ -93,7 +138,6 @@ $organisations = $orgCtrl->listOrganisations(); // CHANGÉ ICI
             <option value="">-- Choisir un type --</option>
             <option value="Monétaire" <?= ($_POST['typeDon'] ?? '') == 'Monétaire' ? 'selected' : '' ?>>Monétaire</option>
             <option value="Matériel" <?= ($_POST['typeDon'] ?? '') == 'Matériel' ? 'selected' : '' ?>>Matériel</option>
-            <option value="Temps" <?= ($_POST['typeDon'] ?? '') == 'Temps' ? 'selected' : '' ?>>Temps (Bénévolat)</option>
           </select>
           <?php if (isset($errors['typeDon'])): ?>
             <span class="error-message"><?= $errors['typeDon'] ?></span>
@@ -128,7 +172,7 @@ $organisations = $orgCtrl->listOrganisations(); // CHANGÉ ICI
       <?php foreach ($organisations as $org): ?>
         <div style="background: rgba(255,255,255,0.1); padding: 25px; border-radius: 15px; width: 280px; border: 1px solid #b01ba5; transition: transform 0.3s;">
           <h3 style="color: #b01ba5; margin-bottom: 15px; font-size: 1.3rem;"><?= htmlspecialchars($org['nom']) ?></h3>
-          <p style="color: #ccc; font-size: 0.95em; margin-bottom: 10px;"><?= htmlspecialchars(substr($org['description'], 0, 100)) ?>...</p>
+          <p style="color: #ccc; font-size: 0.95em; margin-bottom: 10px;"><?= htmlspecialchars(substr($org['description'], 0, 100)) ?></p>
           <div style="color: #4cff4c; font-weight: bold; font-size: 1.1rem;">
             <?= number_format($org['montant_total'] ?? 0, 2) ?> € collectés
           </div>

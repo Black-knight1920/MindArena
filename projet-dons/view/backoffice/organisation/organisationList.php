@@ -20,27 +20,79 @@ foreach ($organisations as $org) {
     <meta charset="UTF-8">
     <title>Gestion des Organisations</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
-        .container { max-width: 1400px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        table { border-collapse: collapse; width: 100%; margin: 20px 0; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: #081624; color: white; }
-        .btn { padding: 8px 16px; text-decoration: none; border-radius: 5px; font-size: 14px; margin: 2px; }
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background: #f5f5f5; }
+        .container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 20px; 
+            border-radius: 10px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        table { 
+            border-collapse: collapse; 
+            width: 100%; 
+            margin: 20px 0; }
+        th, td { 
+            border: 1px solid #ddd; 
+            padding: 12px; 
+            text-align: center; }
+        th { 
+            background-color: #081624; 
+            color: white; }
+        .btn { padding: 8px 16px; 
+            text-decoration: none; 
+            border-radius: 5px; 
+            font-size: 14px;
+            margin: 2px; }
         .btn-add { background: #4CAF50; color: white; }
         .btn-edit { background: #2196F3; color: white; }
         .btn-delete { background: #f44336; color: white; }
         .btn-back { background: #FF9800; color: white; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header { display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 20px; }
         .montant { font-weight: bold; }
         .montant-positive { color: #2E7D32; }
         .montant-zero { color: #666; }
-        .progress-bar { background: #f0f0f0; border-radius: 10px; height: 20px; margin-top: 5px; }
-        .progress-fill { background: linear-gradient(90deg, #4CAF50, #45a049); height: 100%; border-radius: 10px; text-align: center; color: white; font-size: 12px; line-height: 20px; }
-        .stats { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
-        .stat-card { background: white; padding: 15px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .stat-number { font-size: 1.5rem; font-weight: bold; color: #081624; }
-        .stat-label { color: #666; font-size: 0.9rem; }
+        .progress-bar { 
+            background: #f0f0f0; 
+            border-radius: 10px; 
+            height: 20px; 
+            margin-top: 5px; }
+        .progress-fill { 
+            background: linear-gradient(90deg, #4CAF50, #45a049); 
+            height: 100%; 
+            border-radius: 10px; 
+            text-align: center; 
+            color: white; 
+            font-size: 12px; 
+            line-height: 20px; }
+        .stats { 
+            background: #f8f9fa; 
+            padding: 15px; 
+            border-radius: 8px; 
+            margin-bottom: 20px; }
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 15px; }
+        .stat-card { 
+            background: white; 
+            padding: 15px; 
+            border-radius: 8px; 
+            text-align: center; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .stat-number { 
+            font-size: 1.5rem; 
+            font-weight: bold; 
+            color: #081624; }
+        .stat-label { 
+            color: #666; 
+            font-size: 0.9rem; }
     </style>
 </head>
 <body>
