@@ -1,0 +1,98 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f4f4f4;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    background: #2c3e50;
+    color: white;
+    padding: 1rem;
+    margin-bottom: 2rem;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header h1 {
+    margin: 0;
+}
+
+nav {
+    display: flex;
+    gap: 10px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background: #3498db;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.btn:hover {
+    background: #2980b9;
+}
+
+/* Bouton Modifier */
+.btn-edit {
+    display: inline-block;
+    padding: 6px 12px;
+    background-color: #1e88e5;       /* Bleu clair */
+    color: white;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 14px;
+    transition: 0.2s;
+    border: none;
+}
+
+.btn-edit:hover {
+    background-color: #1565c0;       /* Bleu plus foncé */
+}
+
+
+/* Bouton Supprimer */
+.btn-delete {
+    display: inline-block;
+    padding: 6px 12px;
+    background-color: #e53935;       /* Rouge moderne */
+    color: white;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 14px;
+    border: none;
+    transition: 0.2s;
+    cursor: pointer;
+}
+
+.btn-delete:hover {
+    background-color: #c62828;        /* Rouge foncé */
+}
+
+
+/* Form inline pour aligner modifier + supprimer */
+.inline-form {
+    display: inline-block;
+    margin: 0;
+}
+
