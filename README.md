@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Module Formation et Apprentissage
 
 Projet CRUD simple avec architecture MVC pour la gestion des cours et des chapitres.
@@ -142,3 +143,6 @@ Une fois les assets copiés, accédez à :
 - Le projet utilise PDO pour la connexion à la base de données
 - Les chemins relatifs sont configurés pour fonctionner depuis le dossier View/BackOffice
 - Relation 1-N : Un cours peut contenir plusieurs chapitres
+=======
+# MindArena
+>>>>>>> dc37e373fa483819723bccf270308590da19dc57
