@@ -1,0 +1,13 @@
+<svg width="150" height="50" viewBox="0 0 150 50" xmlns="http://www.w3.org/2000/svg">
+  <!-- Main Logo Text -->
+  <text x="5" y="30" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="#000000">
+    <tspan fill="#000000">espr</tspan>
+    <tspan fill="#6b7280">it</tspan>
+  </text>
+  
+  <!-- Red Arrow -->
+  <polygon points="85,15 95,25 85,35" fill="#ef4444"/>
+  
+  <!-- Tagline -->
+  <text x="5" y="42" font-family="Arial, sans-serif" font-size="10" font-weight="normal" fill="#000000">Se former autrement</text>
+</svg>
