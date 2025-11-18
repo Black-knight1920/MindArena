@@ -1,0 +1,196 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap');
+
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+}
+
+body{
+    display: flex;
+    width: 100%;
+    height: 100vh;
+    background: linear-gradient(#c35cff,#000000);
+    color: #fff;
+}
+
+/* SIDEBAR */
+.sidebar{
+    width: 250px;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    padding: 30px 20px;
+    display: flex;
+    flex-direction: column;
+    border-right: 2px solid rgba(255,255,255,0.2);
+}
+
+.logo{
+    font-size: 28px;
+    color: #fff;
+    text-align: center;
+    margin-bottom: 40px;
+    font-weight: 600;
+}
+
+.menu{
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.menu li{
+    padding: 15px 10px;      /* size of each menu item */
+    margin: 10px 0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.4s;
+    font-size: 16px;
+    color: white;
+}
+
+/* Hover effect and active state applied on li */
+.menu li:hover,
+.menu li.active{
+    background: rgba(195,92,255,0.3);
+    transform: translateX(5px);
+}
+
+/* Links inside li */
+.menu li a {
+    color: white !important;          /* forces white text */
+    text-decoration: none !important; /* removes underline */
+    display: block;                   /* fills the li */
+    width: 100%;
+}
+
+/* Optional: ensure hover on a doesn't override li */
+.menu li a:hover {
+    color: white !important;
+    text-decoration: none !important;
+}
+
+
+
+/* LOGOUT BUTTON (UNCHANGED) */
+.logout-btn {
+    margin-top: auto;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(to right, #c35cff, #000000);
+    color: #fff;
+    font-weight: 600;
+    border-radius: 6px;
+    transition: .4s;
+    text-decoration: none; 
+}
+
+.logout-btn:hover {
+    background: linear-gradient(to left, #c35cff, #000000);
+}
+.logout-btn a {
+    color: white !important;
+    text-decoration: none !important;  
+    display: block;                    
+}
+
+/* ---------------- MAIN CONTENT ---------------- */
+.content {
+    flex: 1;
+    background: #f5f5f5;
+    padding: 40px;
+    color: #000;
+    overflow-y: auto;
+}
+
+
+
+/* Header */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.header h1 {
+    font-size: 28px;
+}
+
+.btn-create {
+    padding: 10px 20px;
+    background: linear-gradient(to right, #c35cff, #000000);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-create:hover {
+    background: linear-gradient(to left, #c35cff, #000000);
+}
+
+/* USER LIST */
+.user-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.user-card {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    display: flex;
+    justify-content: space-between;
+}
+
+.user-info p {
+    margin-bottom: 6px;
+}
+
+.user-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.btn-edit, .btn-delete {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.25s ease;
+    transform: translateY(0);
+}
+
+/* EDIT BUTTON */
+.btn-edit {
+    background: #6c63ff;
+    color: white;
+}
+
+.btn-edit:hover {
+    background: #534dd6;
+    transform: scale(1.08) translateY(-2px);
+    box-shadow: 0 4px 12px rgba(108, 99, 255, 0.4);
+}
+
+/* DELETE BUTTON */
+.btn-delete {
+    background: #ff4d4d;
+    color: white;
+}
+
+.btn-delete:hover {
+    background: #d63333;
+    transform: scale(1.08) translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 77, 77, 0.45);
+}

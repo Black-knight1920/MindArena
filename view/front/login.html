@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset='utf-8'>
+        <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+        <title>Login</title>
+        <meta name='viewport' content='width=device-width, initial-scale=1'>
+        <link rel='stylesheet' type='text/css' media='screen' href='assets/css/login.css'>
+    </head>
+
+    <body>
+            <div class="page">
+
+                <div class="form signup">
+                    <form action="login.php" method="post">
+                        <h2>Sign Up</h2>
+                        <input type="hidden" name="form_type" value="signup">
+                        <div class="input">
+                            <input type="text" required name="name" id="name" >
+                            <label for="name">Username</label>
+                        </div>
+                        <div class="input">
+                            <input type="email" required name="email" id="email" >
+                            <label for="email">Email</label>
+                        </div> 
+                        <div class="input">
+                            <input type="password" required name="mdp" id="mdp" >
+                            <label for="mdp">Password</label>
+                        </div>
+                        <div class="input">
+                            <input type="text" required name="date" id="date" placeholder="" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'">
+                            <label for="date">Date de naissance</label>
+                        </div>
+
+                        <button type="submit" class="btnn">Sign-Up</button>
+                        <div class="sign">
+                            <p>Already have an account?<a href="#" class="signIn">Sign In</a></p>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="form login">
+                    <form action="login.php" method="post">
+                        <h2>Mind Arena</h2>
+                        <h2>Login</h2>
+                        <input type="hidden" name="form_type" value="login">
+                        <div class="input">
+                            <input type="text" required name="userl" id="userl" >
+                            <label for="">Username</label>
+                        </div>
+                        <div class="input">
+                            <input type="password" required name="mdpl" id="mdpl">
+                            <label for="">Password</label>
+                        </div>
+                        <div class="mdpoub">
+                            <a href="forgot/forgot.html">Forgot Password?</a>
+                        </div>
+                        <button type="submit" class="btnn">Connect</button>
+                        <div class="sign">
+                            <p>Don't have an account?<a href="#" class="signUp">Sign Up</a></p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+            <script src="assets/js/login.js"></script>
+            <script>
+    document.getElementById("date").addEventListener("focus", function() {
+        this.removeAttribute("placeholder");
+    });
+</script>
+    </body>
+    <footer>
+
+    </footer>
+</html>
