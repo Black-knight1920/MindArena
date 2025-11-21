@@ -12,15 +12,17 @@ class DonController {
             return false;
         }
         
-        $sql = "INSERT INTO don (montant, dateDon, typeDon, organisationId) 
-                VALUES (:montant, :dateDon, :typeDon, :organisationId)";
+        $sql = "INSERT INTO don (montant, dateDon, typeDon, organisationId, nom_donateur, prenom_donateur) 
+                VALUES (:montant, :dateDon, :typeDon, :organisationId, :nomDonateur, :prenomDonateur)";
         $db = config::getConnexion();
         $q = $db->prepare($sql);
         $result = $q->execute([
             ':montant' => $don->getMontant(),
             ':dateDon' => $don->getDateDon()->format('Y-m-d'),
             ':typeDon' => $don->getTypeDon(),
-            ':organisationId' => $don->getOrganisationId()
+            ':organisationId' => $don->getOrganisationId(),
+            ':nomDonateur' => $don->getNomDonateur(),
+            ':prenomDonateur' => $don->getPrenomDonateur()
         ]);
         
         // Mise à jour automatique du montant total
@@ -134,6 +136,18 @@ class DonController {
         // Validation de l'organisation
         if ($don->getOrganisationId() <= 0) {
             $errors[] = "Organisation invalide";
+        }
+        
+        // Validation du nom du donateur (optionnel mais avec limites si fourni)
+        $nomDonateur = $don->getNomDonateur();
+        if ($nomDonateur && strlen($nomDonateur) > 100) {
+            $errors[] = "Le nom du donateur ne peut pas dépasser 100 caractères";
+        }
+        
+        // Validation du prénom du donateur (optionnel mais avec limites si fourni)
+        $prenomDonateur = $don->getPrenomDonateur();
+        if ($prenomDonateur && strlen($prenomDonateur) > 100) {
+            $errors[] = "Le prénom du donateur ne peut pas dépasser 100 caractères";
         }
         
         return $errors;

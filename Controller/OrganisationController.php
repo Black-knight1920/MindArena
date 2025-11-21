@@ -5,26 +5,28 @@ require_once __DIR__."/../Model/Organisation.php";
 class OrganisationController {
     
     public function addOrganisation(Organisation $org) {
-    $validationErrors = $this->validateOrganisation($org);
-    if (!empty($validationErrors)) {
-        echo "Erreur : organisation invalide.";
-        return false;
-    }
+        $validationErrors = $this->validateOrganisation($org);
+        if (!empty($validationErrors)) {
+            echo "Erreur : organisation invalide.";
+            return false;
+        }
 
-    // Préparer la requête SQL
-    $sql = "INSERT INTO organisation (nom, description) 
-            VALUES (:nom, :description)";
-    $db = config::getConnexion();
-    $q = $db->prepare($sql);
-    $result = $q->execute([':nom' => $org->getNom(),':description' => $org->getDescription()]);
-    
-    if (!$result) {
-        echo "Erreur : impossible d'ajouter l'organisation.";
-        return false;
+        $sql = "INSERT INTO organisation (nom, description, website_url) 
+                VALUES (:nom, :description, :website_url)";
+        $db = config::getConnexion();
+        $q = $db->prepare($sql);
+        $result = $q->execute([
+            ':nom' => $org->getNom(),
+            ':description' => $org->getDescription(),
+            ':website_url' => $org->getWebsiteUrl()
+        ]);
+        
+        if (!$result) {
+            echo "Erreur : impossible d'ajouter l'organisation.";
+            return false;
+        }
+        return true;
     }
-    return true;
-}
-
 
     public function listOrganisations() {
         $sql = "SELECT o.*, 
@@ -47,23 +49,22 @@ class OrganisationController {
     }
 
     public function updateOrganisation(int $id, Organisation $org) {
-        // Validation avant mise à jour
         $validationErrors = $this->validateOrganisation($org);
         if (!empty($validationErrors)) {
             echo "Erreur : organisation invalide.";
             return false;
         }
         
-        // Utiliser les noms de colonnes existants
         $sql = "UPDATE organisation SET 
-                nom = :nom, description = :description 
+                nom = :nom, description = :description, website_url = :website_url
                 WHERE id = :id";
         $db = config::getConnexion();
         $q = $db->prepare($sql);
         return $q->execute([
             ':id' => $id,
             ':nom' => $org->getNom(),
-            ':description' => $org->getDescription()
+            ':description' => $org->getDescription(),
+            ':website_url' => $org->getWebsiteUrl()
         ]);
     }
 
@@ -73,8 +74,6 @@ class OrganisationController {
         $q = $db->prepare($sql);
         return $q->execute([':id' => $id]);
     }
-
-
 
     //Récupère le montant total d'une organisation spécifique
     public function getMontantOrganisation(int $organisationId) {
@@ -108,6 +107,16 @@ class OrganisationController {
             $errors[] = "La description doit contenir au moins 10 caractères";
         } else if (strlen($description) > 500) {
             $errors[] = "La description ne peut pas dépasser 500 caractères";
+        }
+        
+        // Validation de l'URL (optionnelle mais doit être valide si fournie)
+        $websiteUrl = trim($org->getWebsiteUrl() ?? '');
+        if (!empty($websiteUrl)) {
+            if (!filter_var($websiteUrl, FILTER_VALIDATE_URL)) {
+                $errors[] = "L'URL du site web n'est pas valide";
+            } else if (strlen($websiteUrl) > 255) {
+                $errors[] = "L'URL ne peut pas dépasser 255 caractères";
+            }
         }
         
         return $errors;

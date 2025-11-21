@@ -20,7 +20,8 @@ if ($_POST) {
         $updatedOrg = new Organisation(
             $id,
             trim($_POST['nom']),
-            trim($_POST['description'])
+            trim($_POST['description']),
+            trim($_POST['website_url'] ?? '')
         );
         
         // Validation côté serveur
@@ -101,6 +102,16 @@ if ($_POST) {
                 <span class="validation-error" id="descriptionError"></span>
                 <div class="char-count" id="descriptionCount"><?= strlen($organisationData['description'] ?? '') ?>/500 caractères</div>
             </div>
+
+            <div class="form-group">
+                <label for="website_url">Site Web (URL)</label>
+                <input type="url" id="website_url" name="website_url" 
+                       value="<?= htmlspecialchars($organisationData['website_url'] ?? '') ?>"
+                       placeholder="Ex: https://www.organisation.org"
+                       maxlength="255">
+                <span class="validation-error" id="websiteUrlError"></span>
+                <div class="char-count" id="websiteUrlCount"><?= strlen($organisationData['website_url'] ?? '') ?>/255 caractères</div>
+            </div>
             
             <div>
                 <button type="submit">💾 Mettre à jour</button>
@@ -115,12 +126,14 @@ if ($_POST) {
             const form = document.getElementById('orgForm');
             const fields = {
                 nom: document.getElementById('nom'),
-                description: document.getElementById('description')
+                description: document.getElementById('description'),
+                website_url: document.getElementById('website_url')
             };
 
             const counters = {
                 nom: document.getElementById('nomCount'),
-                description: document.getElementById('descriptionCount')
+                description: document.getElementById('descriptionCount'),
+                website_url: document.getElementById('websiteUrlCount')
             };
 
             // Compteur de caractères en temps réel
@@ -132,6 +145,11 @@ if ($_POST) {
             fields.description.addEventListener('input', function() {
                 updateCharCount(this, counters.description, 500);
                 validateField('description');
+            });
+
+            fields.website_url.addEventListener('input', function() {
+                updateCharCount(this, counters.website_url, 255);
+                validateField('website_url');
             });
 
             // Validation en temps réel pour tous les champs
@@ -205,6 +223,13 @@ if ($_POST) {
                             isValid = false;
                         }
                         break;
+
+                    case 'website_url':
+                        if (value && !isValidUrl(value)) {
+                            message = "Veuillez entrer une URL valide (commençant par http:// ou https://)";
+                            isValid = false;
+                        }
+                        break;
                 }
                 
                 if (!isValid) {
@@ -215,6 +240,15 @@ if ($_POST) {
                 }
                 
                 return isValid;
+            }
+
+            function isValidUrl(string) {
+                try {
+                    new URL(string);
+                    return true;
+                } catch (_) {
+                    return false;
+                }
             }
         });
     </script>

@@ -12,11 +12,12 @@ $errors = [];
 
 // Traitement du formulaire
 if ($_POST && isset($_POST['montant'])) {
-    // CRÉATION DU DON - À COMPLÉTER AVEC VOTRE LOGIQUE
     $montant = floatval($_POST['montant']);
     $dateDon = $_POST['dateDon'];
     $typeDon = $_POST['typeDon'];
     $organisationId = intval($_POST['organisationId']);
+    $nomDonateur = $_POST['nom_donateur'] ?? '';
+    $prenomDonateur = $_POST['prenom_donateur'] ?? '';
     
     // Validation des données
     if (empty($montant) || $montant <= 0) {
@@ -39,7 +40,10 @@ if ($_POST && isset($_POST['montant'])) {
             $montant,
             new DateTime($dateDon),
             $typeDon,
-            $organisationId
+            $organisationId,
+            null,
+            $nomDonateur,
+            $prenomDonateur
         );
         
         // Validation et ajout
@@ -78,6 +82,44 @@ $organisations = $orgCtrl->listOrganisations();
       margin-top: 5px;
       display: block;
     }
+    .org-card {
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .org-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(176, 27, 165, 0.3);
+    }
+    .org-card.clickable {
+      cursor: pointer;
+    }
+    .org-link-indicator {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #4cff4c;
+      color: #000;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .visit-text {
+      color: #b01ba5;
+      font-size: 0.9em;
+      margin-top: 8px;
+      font-weight: bold;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .org-card:hover .visit-text {
+      opacity: 1;
+    }
   </style>
 </head>
 
@@ -114,10 +156,24 @@ $organisations = $orgCtrl->listOrganisations();
 
       <form method="POST" id="donForm">
         <div>
+          <label>👤 Nom du donateur (optionnel)</label>
+          <input type="text" name="nom_donateur" 
+                 value="<?= htmlspecialchars($_POST['nom_donateur'] ?? '') ?>" 
+                 placeholder="Ex: Dupont">
+        </div>
+        
+        <div>
+          <label>👤 Prénom du donateur (optionnel)</label>
+          <input type="text" name="prenom_donateur" 
+                 value="<?= htmlspecialchars($_POST['prenom_donateur'] ?? '') ?>" 
+                 placeholder="Ex: Jean">
+        </div>
+        
+        <div>
           <label>💶 Montant (€)</label>
           <input type="number" name="montant" 
                  value="<?= htmlspecialchars($_POST['montant'] ?? '') ?>" 
-                 placeholder="Ex: 50.00">
+                 placeholder="Ex: 50.00" step="0.01">
           <?php if (isset($errors['montant'])): ?>
             <span class="error-message"><?= $errors['montant'] ?></span>
           <?php endif; ?>
@@ -170,12 +226,31 @@ $organisations = $orgCtrl->listOrganisations();
     <h2 style="color: white; margin-bottom: 50px; font-size: 2.5rem;">Nos Associations Partenaires</h2>
     <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; max-width: 1200px; margin: 0 auto;">
       <?php foreach ($organisations as $org): ?>
-        <div style="background: rgba(255,255,255,0.1); padding: 25px; border-radius: 15px; width: 280px; border: 1px solid #b01ba5; transition: transform 0.3s;">
-          <h3 style="color: #b01ba5; margin-bottom: 15px; font-size: 1.3rem;"><?= htmlspecialchars($org['nom']) ?></h3>
-          <p style="color: #ccc; font-size: 0.95em; margin-bottom: 10px;"><?= htmlspecialchars(substr($org['description'], 0, 100)) ?></p>
+        <div class="org-card <?= !empty($org['website_url']) ? 'clickable' : '' ?>" 
+             style="background: rgba(255,255,255,0.1); padding: 25px; border-radius: 15px; width: 280px; border: 1px solid #b01ba5; cursor: <?= !empty($org['website_url']) ? 'pointer' : 'default' ?>;"
+             <?php if (!empty($org['website_url'])): ?>
+             onclick="window.open('<?= htmlspecialchars($org['website_url']) ?>', '_blank')"
+             <?php endif; ?>>
+          
+          <?php if (!empty($org['website_url'])): ?>
+            <div class="org-link-indicator" title="Site web disponible">🔗</div>
+          <?php endif; ?>
+          
+          <h3 style="color: #b01ba5; margin-bottom: 15px; font-size: 1.3rem;">
+            <?= htmlspecialchars($org['nom']) ?>
+          </h3>
+          <p style="color: #ccc; font-size: 0.95em; margin-bottom: 10px;">
+            <?= htmlspecialchars(substr($org['description'], 0, 100)) ?>
+          </p>
           <div style="color: #4cff4c; font-weight: bold; font-size: 1.1rem;">
             <?= number_format($org['montant_total'] ?? 0, 2) ?> € collectés
           </div>
+          
+          <?php if (!empty($org['website_url'])): ?>
+            <div class="visit-text">
+              Cliquez pour visiter le site ↗
+            </div>
+          <?php endif; ?>
         </div>
       <?php endforeach; ?>
     </div>
