@@ -41,141 +41,431 @@ if ($_POST) {
     <meta charset="UTF-8">
     <title>Ajouter une Organisation - Mind Arena</title>
     
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Remix Icons pour le dark mode -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     
     <style>
+        /* ================= THEME VARIABLES ================= */
         :root {
-            --primary: #5e72e4;
-            --secondary: #8392ab;
-            --success: #2dce89;
-            --danger: #f5365c;
-            --warning: #fb6340;
-            --dark: #212529;
-            --sidebar-bg: #172b4d;
-            --sidebar-color: #fff;
+            --bg: #ffffff;
+            --bg-soft: #f8fafc;
+            --sidebar-bg: #ffffff;
+            --sidebar-border: rgba(15,23,42,0.06);
+            --sidebar-text: #111827;
+            --sidebar-muted: #6b7280;
+
+            --header-bg: rgba(255,255,255,0.96);
+
+            --card-bg: #ffffff;
+            --card-border: rgba(15,23,42,0.07);
+
+            --primary: #8b5cf6;
+            --primary-soft: rgba(139,92,246,0.09);
+            --primary-hover: #7c3aed;
+
+            --text: #111827;
+            --text-muted: #6b7280;
+            --border-subtle: rgba(148,163,184,0.35);
+
+            --shadow-soft: 0 18px 40px rgba(15,23,42,0.12);
+
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        body.dark {
+            --bg: #0f1018;
+            --bg-soft: #151626;
+            --sidebar-bg: #11121b;
+            --sidebar-border: rgba(255,255,255,0.05);
+            --sidebar-text: #e5e7eb;
+            --sidebar-muted: #9ca3af;
+
+            --header-bg: rgba(15,16,24,0.96);
+
+            --card-bg: #181927;
+            --card-border: rgba(148,163,184,0.25);
+
+            --primary: #8b5cf6;
+            --primary-soft: rgba(139,92,246,0.13);
+            --primary-hover: #a855f7;
+
+            --text: #f9fafb;
+            --text-muted: #9ca3af;
+            --border-subtle: rgba(148,163,184,0.25);
+
+            --shadow-soft: 0 18px 45px rgba(15,23,42,0.55);
+        }
+
+        /* ================= GLOBAL ================= */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f8f9fe;
-            color: #525f7f;
+            min-height: 100vh;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            transition: background .25s ease, color .25s ease;
         }
 
-        /* Sidebar */
-        .sidebar {
-            width: 280px;
-            background: var(--sidebar-bg);
-            color: var(--sidebar-color);
-            position: fixed;
-            height: 100vh;
-            overflow-y: auto;
-            transition: all 0.3s;
-            z-index: 1000;
-        }
-
-        .sidebar-header {
-            padding: 1.5rem 1.5rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .sidebar-nav .nav-link {
-            display: flex;
-            align-items: center;
-            padding: 0.75rem 1.5rem;
-            color: rgba(255, 255, 255, 0.8);
+        a {
             text-decoration: none;
-            transition: all 0.3s;
-            border-left: 3px solid transparent;
+            color: inherit;
         }
 
-        .sidebar-nav .nav-link:hover,
-        .sidebar-nav .nav-link.active {
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            border-left-color: var(--primary);
-        }
-
-        /* Main Content */
-        .main-content {
-            margin-left: 280px;
-            transition: all 0.3s;
+        /* ================= LAYOUT ================= */
+        .admin-shell {
+            display: flex;
             min-height: 100vh;
         }
 
-        .main-header {
-            background: #fff;
-            padding: 1.5rem 2rem;
-            box-shadow: 0 1px 15px rgba(0, 0, 0, 0.04);
-            border-bottom: 1px solid #e9ecef;
+        /* ---------- SIMPLE SIDEBAR ---------- */
+        .admin-sidebar {
+            width: 230px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--sidebar-border);
+            display: flex;
+            flex-direction: column;
+            padding: 18px 16px 18px;
+            transition: background .25s ease, border-color .25s ease;
         }
 
-        /* Form Styling */
-        .form-container {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
-            border: 1px solid #e9ecef;
-            overflow: hidden;
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 4px 18px;
+            border-bottom: 1px solid var(--sidebar-border);
+            margin-bottom: 16px;
         }
 
-        .form-card {
-            padding: 2rem;
+        .sidebar-logo {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #8b5cf6, #ec4899);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 18px;
+            box-shadow: 0 10px 25px rgba(139,92,246,0.6);
         }
 
-        .btn {
+        .sidebar-title {
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-title span:first-child {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--sidebar-text);
+        }
+        .sidebar-title span:last-child {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .18em;
+            color: var(--sidebar-muted);
+        }
+
+        .sidebar-nav {
+            margin-top: 10px;
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar-nav-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--sidebar-muted);
+            letter-spacing: .12em;
+            margin: 10px 6px 6px;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 10px;
+            border-radius: 9px;
+            font-size: 14px;
+            color: var(--sidebar-text);
+            transition: background .18s ease, color .18s ease, transform .12s ease;
+        }
+
+        .sidebar-link i {
+            font-size: 17px;
+        }
+
+        .sidebar-link:hover {
+            background: var(--primary-soft);
+            color: var(--primary);
+            transform: translateX(2px);
+        }
+
+        .sidebar-link.active {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 12px 25px rgba(139,92,246,0.6);
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 14px;
+            border-top: 1px dashed var(--sidebar-border);
+            font-size: 12px;
+            color: var(--sidebar-muted);
+        }
+
+        .sidebar-footer a {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            margin-top: 6px;
+            padding: 6px 8px;
+            border-radius: 999px;
+            transition: background .18s ease, color .18s ease;
+        }
+
+        .sidebar-footer a:hover {
+            background: var(--primary-soft);
+            color: var(--primary);
+        }
+
+        /* ---------- MAIN AREA ---------- */
+        .admin-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        /* TOP BAR */
+        .admin-header {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            height: 60px;
+            background: var(--header-bg);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 22px;
+            transition: background .25s ease, border-color .25s ease;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .header-left-title {
             font-weight: 600;
-            padding: 0.75rem 1.5rem;
-            border-radius: 6px;
-            transition: all 0.3s;
         }
 
-        .btn-primary {
-            background: linear-gradient(87deg, var(--primary) 0, #825ee4 100%);
+        .header-left-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .header-search {
+            flex: 0 0 280px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            background: var(--card-bg);
+            border-radius: 999px;
+            border: 1px solid var(--border-subtle);
+            transition: background .25s ease, border-color .25s ease;
+        }
+
+        .header-search input {
+            flex: 1;
             border: none;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
-        }
-
-        .btn-outline-secondary {
-            border: 2px solid var(--secondary);
-            color: var(--secondary);
+            outline: none;
+            font-size: 13px;
             background: transparent;
+            color: var(--text);
         }
 
-        .btn-outline-secondary:hover {
-            background: var(--secondary);
-            color: white;
-            transform: translateY(-2px);
+        .header-search i {
+            font-size: 16px;
+            color: var(--text-muted);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* Toggle mode */
+        .theme-toggle-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .12em;
+            color: var(--text-muted);
+        }
+
+        .theme-toggle {
+            width: 46px;
+            height: 22px;
+            border-radius: 999px;
+            background: rgba(15,23,42,0.75);
+            position: relative;
+            cursor: pointer;
+            transition: background .25s ease;
+        }
+
+        body:not(.dark) .theme-toggle {
+            background: rgba(148,163,184,0.6);
+        }
+
+        .theme-toggle-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 999px;
+            background: #f9fafb;
+            position: absolute;
+            top: 2px;
+            left: 3px;
+            transition: transform .22s ease;
+            box-shadow: 0 6px 16px rgba(15,23,42,0.65);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #0f172a;
+        }
+
+        body:not(.dark) .theme-toggle-thumb {
+            transform: translateX(22px);
+        }
+
+        .header-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+        }
+
+        .user-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #8b5cf6, #ec4899);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 16px;
+            box-shadow: 0 10px 20px rgba(139,92,246,0.7);
+        }
+
+        /* CONTENT WRAP */
+        .admin-content {
+            flex: 1;
+            padding: 24px 24px 26px;
+            min-height: calc(100vh - 60px);
+            background: var(--bg-soft);
+            transition: background .25s ease;
+        }
+
+        .content-inner {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .card-shell {
+            background: var(--card-bg);
+            border-radius: 18px;
+            border: 1px solid var(--card-border);
+            box-shadow: var(--shadow-soft);
+            padding: 30px;
+            transition: background .25s ease, border-color .25s ease, box-shadow .25s ease;
+        }
+
+        /* ================= FORM STYLES ================= */
+        .form-container {
+            margin-top: 20px;
+        }
+
+        .form-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--primary), #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .form-subtitle {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
         }
 
         .form-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             font-weight: 600;
-            color: var(--dark);
-            margin-bottom: 0.5rem;
+            color: var(--text);
+            margin-bottom: 8px;
+            font-size: 0.95rem;
         }
 
-        .form-control, .form-control:focus {
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            padding: 0.75rem 1rem;
-            font-size: 0.95rem;
-            transition: all 0.3s;
+        .form-label i {
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border-subtle);
+            border-radius: 10px;
+            font-size: 1rem;
+            background: var(--card-bg);
+            color: var(--text);
+            transition: all 0.3s ease;
+            font-family: inherit;
         }
 
         .form-control:focus {
+            outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 0.2rem rgba(94, 114, 228, 0.25);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
         }
 
-        /* Validation Styles */
+        textarea.form-control {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        /* Validation Styles (gardés de votre version originale) */
         .error-field {
             border-color: var(--danger) !important;
             box-shadow: 0 0 0 0.2rem rgba(245, 54, 92, 0.25) !important;
@@ -189,14 +479,16 @@ if ($_POST) {
         .validation-error {
             color: var(--danger);
             font-size: 0.85rem;
-            margin-top: 0.25rem;
+            margin-top: 0.5rem;
             display: block;
+            font-weight: 500;
         }
 
         .char-count {
             font-size: 0.8rem;
-            color: var(--secondary);
-            margin-top: 0.25rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+            text-align: right;
         }
 
         .char-count.warning {
@@ -204,97 +496,182 @@ if ($_POST) {
         }
 
         .message {
-            padding: 1rem 1.5rem;
-            margin: 1rem 0;
-            border-radius: 8px;
+            padding: 16px 20px;
+            margin: 0 0 24px 0;
+            border-radius: 12px;
             border: 1px solid transparent;
+            font-weight: 500;
         }
 
         .success {
-            background: rgba(45, 206, 137, 0.1);
-            color: #155724;
-            border-color: rgba(45, 206, 137, 0.2);
+            background: rgba(16, 185, 129, 0.1);
+            color: #065f46;
+            border-color: rgba(16, 185, 129, 0.2);
         }
 
         .error {
-            background: rgba(245, 54, 92, 0.1);
-            color: #721c24;
-            border-color: rgba(245, 54, 92, 0.2);
+            background: rgba(239, 68, 68, 0.1);
+            color: #7f1d1d;
+            border-color: rgba(239, 68, 68, 0.2);
         }
 
-        @media (max-width: 768px) {
-            .sidebar {
-                margin-left: -280px;
+        /* Button styles */
+        .btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #a855f7);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 12px rgba(139,92,246,0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(139,92,246,0.4);
+            background: linear-gradient(135deg, var(--primary-hover), #9333ea);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text-muted);
+            border: 2px solid var(--border-subtle);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary-soft);
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 16px;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        @media (max-width: 960px) {
+            .admin-sidebar {
+                display: none;
             }
-            .main-content {
-                margin-left: 0;
+            .admin-header {
+                padding-inline: 14px;
+            }
+            .header-search {
+                display: none;
+            }
+            .admin-content {
+                padding-inline: 14px;
+            }
+            .form-actions {
+                flex-direction: column;
             }
         }
     </style>
 </head>
 
 <body>
-    <!-- ======= Sidebar ======= -->
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <h5 class="mb-0 text-white">
-                <i class="bi bi-rocket-takeoff me-2"></i>
-                Mind Arena
-            </h5>
-            <small class="text-muted">Backoffice</small>
-        </div>
-
-        <nav class="sidebar-nav">
-            <a class="nav-link active" href="addOrganisation.php">
-                <i class="bi bi-plus-circle me-2"></i>
-                Nouvelle organisation
-            </a>
-            <a class="nav-link" href="organisationList.php">
-                <i class="bi bi-building me-2"></i>
-                Liste des organisations
-            </a>
-            <a class="nav-link" href="../don/donList.php">
-                <i class="bi bi-currency-euro me-2"></i>
-                Dons
-            </a>
-            <a class="nav-link" href="/projet-dons/backoffice.php">
-                <i class="bi bi-speedometer2 me-2"></i>
-                Dashboard
-            </a>
-        </nav>
-    </div>
-
-    <!-- ======= Main Content ======= -->
-    <div class="main-content">
-        <div class="main-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h4 class="mb-0 fw-bold text-dark">
-                        <i class="bi bi-plus-circle me-2"></i>
-                        Nouvelle Organisation
-                    </h4>
-                    <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb mb-0 mt-2">
-                            <li class="breadcrumb-item"><a href="/projet-dons/backoffice.php">Dashboard</a></li>
-                            <li class="breadcrumb-item"><a href="organisationList.php">Organisations</a></li>
-                            <li class="breadcrumb-item active">Nouvelle</li>
-                        </ol>
-                    </nav>
+    <div class="admin-shell">
+        <!-- ======= Sidebar ======= -->
+        <div class="admin-sidebar">
+            <div class="sidebar-brand">
+                <div class="sidebar-logo">
+                    <i class="bi bi-rocket-takeoff"></i>
                 </div>
-                <div>
-                    <a href="organisationList.php" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left me-2"></i>
-                        Retour à la liste
-                    </a>
+                <div class="sidebar-title">
+                    <span>Mind Arena</span>
+                    <span>Backoffice</span>
                 </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="sidebar-nav-label">Navigation</div>
+                <a href="/projet-dons/backoffice.php" class="sidebar-link">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Dashboard</span>
+                </a>
+
+                <div class="sidebar-nav-label">Gestion</div>
+                <a href="../don/donList.php" class="sidebar-link">
+                    <i class="bi bi-currency-euro"></i>
+                    <span>Liste des Dons</span>
+                </a>
+                <a href="organisationList.php" class="sidebar-link">
+                    <i class="bi bi-building"></i>
+                    <span>Organisations</span>
+                </a>
+                <a href="addOrganisation.php" class="sidebar-link active">
+                    <i class="bi bi-plus-circle"></i>
+                    <span>Nouvelle Organisation</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <span class="text-muted-small">© 2024 Mind Arena</span>
+                <a href="/projet-dons/View/frontoffice/index.php">
+                    <i class="bi bi-eye"></i>
+                    Voir le site
+                </a>
             </div>
         </div>
 
-        <div class="container-fluid py-4">
-            <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    <div class="form-container">
-                        <div class="form-card">
+        <!-- ======= Main Content ======= -->
+        <div class="admin-main">
+            <!-- Header -->
+            <header class="admin-header">
+                <div class="header-left">
+                    <div>
+                        <div class="header-left-title">Nouvelle Organisation</div>
+                        <div class="header-left-sub">Ajouter une association partenaire</div>
+                    </div>
+                </div>
+
+                <div class="header-search">
+                    <i class="bi bi-search"></i>
+                    <input type="text" placeholder="Rechercher...">
+                </div>
+
+                <div class="header-right">
+                    <div class="theme-toggle-wrap">
+                        <span>Mode</span>
+                        <div class="theme-toggle" id="themeToggle">
+                            <div class="theme-toggle-thumb">
+                                <i class="ri-sun-fill"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="header-user">
+                        <div class="user-avatar">
+                            <i class="bi bi-person"></i>
+                        </div>
+                        <span>Admin</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content -->
+            <div class="admin-content">
+                <div class="content-inner">
+                    <div class="card-shell">
+                        <div class="form-container">
+                            <h1 class="form-title">Nouvelle Organisation</h1>
+                            <p class="form-subtitle">Ajoutez une nouvelle association partenaire à la plateforme</p>
+
                             <?php if ($message): ?>
                                 <div class="message <?= $messageType === 'success' ? 'success' : 'error' ?>">
                                     <?= $message ?>
@@ -302,9 +679,9 @@ if ($_POST) {
                             <?php endif; ?>
 
                             <form method="POST" id="orgForm" novalidate>
-                                <div class="mb-4">
+                                <div class="form-group">
                                     <label for="nom" class="form-label">
-                                        <i class="bi bi-building me-1"></i>
+                                        <i class="bi bi-building"></i>
                                         Nom de l'organisation
                                     </label>
                                     <input type="text" 
@@ -316,9 +693,9 @@ if ($_POST) {
                                     <div class="char-count" id="nomCount">0 caractères</div>
                                 </div>
                                 
-                                <div class="mb-4">
+                                <div class="form-group">
                                     <label for="description" class="form-label">
-                                        <i class="bi bi-text-paragraph me-1"></i>
+                                        <i class="bi bi-text-paragraph"></i>
                                         Description
                                     </label>
                                     <textarea class="form-control" 
@@ -330,9 +707,9 @@ if ($_POST) {
                                     <div class="char-count" id="descriptionCount">0 caractères</div>
                                 </div>
 
-                                <div class="mb-4">
+                                <div class="form-group">
                                     <label for="website_url" class="form-label">
-                                        <i class="bi bi-globe me-1"></i>
+                                        <i class="bi bi-globe"></i>
                                         Site Web (URL)
                                     </label>
                                     <input type="text" 
@@ -344,14 +721,14 @@ if ($_POST) {
                                     <div class="char-count" id="websiteUrlCount">0 caractères</div>
                                 </div>
                                 
-                                <div class="d-flex gap-3 pt-3">
+                                <div class="form-actions">
                                     <button type="submit" class="btn btn-primary">
-                                        <i class="bi bi-check-circle me-2"></i>
+                                        <i class="bi bi-check-circle"></i>
                                         Enregistrer l'organisation
                                     </button>
-                                    <a href="organisationList.php" class="btn btn-outline-secondary">
-                                        <i class="bi bi-x-circle me-2"></i>
-                                        Annuler
+                                    <a href="organisationList.php" class="btn btn-outline">
+                                        <i class="bi bi-arrow-left"></i>
+                                        Retour à la liste
                                     </a>
                                 </div>
                             </form>
@@ -362,10 +739,37 @@ if ($_POST) {
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
     <script>
-        // Validation côté client pour les organisations
+        // Thème dark / light synchronisé avec localStorage
+        (function () {
+            const body = document.body;
+            const toggle = document.getElementById('themeToggle');
+            const thumb = document.querySelector('.theme-toggle-thumb');
+
+            function applyTheme(theme) {
+                if (theme === 'light') {
+                    body.classList.remove('dark');
+                    if (thumb) thumb.innerHTML = '<i class="ri-sun-fill"></i>';
+                } else {
+                    body.classList.add('dark');
+                    if (thumb) thumb.innerHTML = '<i class="ri-moon-fill"></i>';
+                }
+                localStorage.setItem('ma-admin-theme', theme);
+            }
+
+            // Initial
+            const saved = localStorage.getItem('ma-admin-theme') || 'light';
+            applyTheme(saved);
+
+            if (toggle) {
+                toggle.addEventListener('click', function () {
+                    const next = body.classList.contains('dark') ? 'light' : 'dark';
+                    applyTheme(next);
+                });
+            }
+        })();
+
+        // Validation côté client pour les organisations (gardé de votre version originale)
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('orgForm');
             const fields = {

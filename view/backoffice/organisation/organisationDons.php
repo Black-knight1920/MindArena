@@ -1,37 +1,47 @@
 <?php
-require_once __DIR__."/../../../Controller/OrganisationController.php";
 require_once __DIR__."/../../../Controller/DonController.php";
+require_once __DIR__."/../../../Controller/OrganisationController.php";
 
-$orgCtrl = new OrganisationController();
 $donCtrl = new DonController();
+$orgCtrl = new OrganisationController();
 
-$organisations = $orgCtrl->listOrganisations();
-$totalGeneral = 0;
-foreach ($organisations as $org) {
-    $totalGeneral += $org['montant_total'] ?? 0;
+$organisationId = $_GET['id'] ?? 0;
+
+// Récupérer les informations de l'organisation
+$organisation = $orgCtrl->getOrganisation($organisationId);
+
+if (!$organisation) {
+    header("Location: organisationList.php");
+    exit;
 }
 
-// Récupérer tous les dons pour compter par organisation
-$tousLesDons = $donCtrl->listDon();
-$donsParOrganisation = [];
+// Récupérer les dons de cette organisation spécifique
+$sql = "SELECT d.* 
+        FROM don d 
+        WHERE d.organisationId = :organisationId 
+        ORDER BY d.dateDon DESC, d.id DESC";
 
-// Organiser les dons par organisation
-foreach ($tousLesDons as $don) {
-    $orgId = $don['organisationId'];
-    if (!isset($donsParOrganisation[$orgId])) {
-        $donsParOrganisation[$orgId] = [];
-    }
-    $donsParOrganisation[$orgId][] = $don;
+$db = config::getConnexion();
+$q = $db->prepare($sql);
+$q->execute([':organisationId' => $organisationId]);
+$dons = $q->fetchAll();
+
+// Calculer le total des dons pour cette organisation
+$totalOrganisation = 0;
+foreach ($dons as $don) {
+    $totalOrganisation += $don['montant'];
 }
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Organisations - Mind Arena</title>
+    <title>Dons de <?= htmlspecialchars($organisation['nom']) ?> - Mind Arena</title>
     
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Remix Icons pour le dark mode -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     
     <style>
         /* ================= THEME VARIABLES ================= */
@@ -61,7 +71,6 @@ foreach ($tousLesDons as $don) {
             --success: #10b981;
             --danger: #ef4444;
             --warning: #f59e0b;
-            --info: #3b82f6;
         }
 
         body.light {
@@ -86,21 +95,15 @@ foreach ($tousLesDons as $don) {
             --border-subtle: rgba(148,163,184,0.35);
 
             --shadow-soft: 0 18px 40px rgba(15,23,42,0.12);
-
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --info: #3b82f6;
         }
 
         /* ================= GLOBAL ================= */
         * {
             box-sizing: border-box;
-            margin: 0;
-            padding: 0;
         }
 
         body {
+            margin: 0;
             min-height: 100vh;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
             background: radial-gradient(circle at top left, rgba(139,92,246,0.16), transparent 55%),
@@ -129,7 +132,6 @@ foreach ($tousLesDons as $don) {
             display: flex;
             flex-direction: column;
             padding: 18px 16px 18px;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
         }
 
         .sidebar-brand {
@@ -256,7 +258,6 @@ foreach ($tousLesDons as $don) {
             align-items: center;
             justify-content: space-between;
             padding: 0 22px;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
         }
 
         .header-left {
@@ -284,7 +285,6 @@ foreach ($tousLesDons as $don) {
             background: rgba(15,23,42,0.4);
             border-radius: 999px;
             border: 1px solid rgba(148,163,184,0.35);
-            transition: background-color 0.3s ease, border-color 0.3s ease;
         }
 
         body.light .header-search {
@@ -330,7 +330,6 @@ foreach ($tousLesDons as $don) {
             background: rgba(15,23,42,0.75);
             position: relative;
             cursor: pointer;
-            border: none;
         }
 
         body.light .theme-toggle {
@@ -384,7 +383,6 @@ foreach ($tousLesDons as $don) {
             padding: 24px 24px 26px;
             min-height: calc(100vh - 60px);
             background: var(--bg-soft);
-            transition: background-color 0.3s ease;
         }
 
         .content-inner {
@@ -398,12 +396,32 @@ foreach ($tousLesDons as $don) {
             border: 1px solid var(--card-border);
             box-shadow: var(--shadow-soft);
             padding: 22px 22px 20px;
-            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
-        /* ================= TABLE STYLES ================= */
-        .table-container {
-            margin-top: 20px;
+        /* ================= STYLES SPÉCIFIQUES ================= */
+        .org-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .org-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .org-subtitle {
+            color: var(--text-muted);
+            max-width: 600px;
+            line-height: 1.5;
         }
 
         .stats-grid {
@@ -419,7 +437,6 @@ foreach ($tousLesDons as $don) {
             border: 1px solid var(--card-border);
             padding: 16px;
             text-align: center;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
         }
 
         .stat-value {
@@ -441,7 +458,6 @@ foreach ($tousLesDons as $don) {
             border-radius: 12px;
             overflow: hidden;
             box-shadow: var(--shadow-soft);
-            transition: background-color 0.3s ease, box-shadow 0.3s ease;
         }
 
         .modern-table th {
@@ -459,7 +475,6 @@ foreach ($tousLesDons as $don) {
             padding: 14px 12px;
             border-bottom: 1px solid var(--border-subtle);
             font-size: 0.9rem;
-            transition: border-color 0.3s ease;
         }
 
         .modern-table tr:last-child td {
@@ -490,12 +505,6 @@ foreach ($tousLesDons as $don) {
             border: 1px solid rgba(139, 92, 246, 0.3);
         }
 
-        .badge-info {
-            background: rgba(59, 130, 246, 0.2);
-            color: var(--info);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-        }
-
         /* Button styles */
         .btn {
             padding: 8px 16px;
@@ -511,19 +520,6 @@ foreach ($tousLesDons as $don) {
             gap: 6px;
         }
 
-        .btn-success {
-            background: rgba(16, 185, 129, 0.2);
-            color: var(--success);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-        }
-
-        .btn-success:hover {
-            background: var(--success);
-            color: white;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-        }
-
         .btn-danger {
             background: rgba(239, 68, 68, 0.2);
             color: var(--danger);
@@ -535,31 +531,6 @@ foreach ($tousLesDons as $don) {
             color: white;
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-            border: 1px solid var(--primary);
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-hover);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
-        }
-
-        .btn-info {
-            background: rgba(59, 130, 246, 0.2);
-            color: var(--info);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-        }
-
-        .btn-info:hover {
-            background: var(--info);
-            color: white;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
         }
 
         .btn-outline {
@@ -574,36 +545,19 @@ foreach ($tousLesDons as $don) {
             color: var(--primary);
         }
 
-        /* Progress bar */
-        .progress {
-            height: 6px;
-            background: var(--border-subtle);
-            border-radius: 3px;
-            overflow: hidden;
-        }
-
-        .progress-bar {
-            height: 100%;
-            background: linear-gradient(135deg, var(--success), #34d399);
-            border-radius: 3px;
-        }
-
         /* Amount styling */
         .amount {
             font-weight: 700;
             color: var(--success);
         }
 
-        .amount-zero {
-            color: var(--text-muted);
+        .donor-name {
+            font-weight: 600;
         }
 
-        /* Description cell */
-        .description-cell {
-            max-width: 300px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        .anonymous {
+            color: var(--text-muted);
+            font-style: italic;
         }
 
         /* Website link */
@@ -630,11 +584,14 @@ foreach ($tousLesDons as $don) {
             opacity: 0.5;
         }
 
-        /* Action buttons */
-        .action-buttons {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
+        .total-row {
+            background: var(--primary-soft) !important;
+            font-weight: 700;
+        }
+
+        .total-row td {
+            border-top: 2px solid var(--primary);
+            border-bottom: none !important;
         }
 
         /* Simple utilities */
@@ -643,17 +600,7 @@ foreach ($tousLesDons as $don) {
             color: var(--text-muted);
         }
 
-        .mt-3 {
-            margin-top: 1rem;
-        }
-
         .me-1 { margin-right: 0.25rem; }
-        .me-2 { margin-right: 0.5rem; }
-
-        .d-flex { display: flex; }
-        .align-items-center { align-items: center; }
-        .gap-2 { gap: 0.5rem; }
-        .flex-grow-1 { flex-grow: 1; }
 
         @media (max-width: 960px) {
             .admin-sidebar {
@@ -671,9 +618,6 @@ foreach ($tousLesDons as $don) {
             .modern-table {
                 display: block;
                 overflow-x: auto;
-            }
-            .action-buttons {
-                flex-direction: column;
             }
         }
     </style>
@@ -730,35 +674,24 @@ foreach ($tousLesDons as $don) {
             <header class="admin-header">
                 <div class="header-left">
                     <div>
-                        <div class="header-left-title">Organisations</div>
-                        <div class="header-left-sub">Gestion des associations partenaires</div>
+                        <div class="header-left-title">Dons de l'organisation</div>
+                        <div class="header-left-sub">Détail des donations reçues</div>
                     </div>
-                </div>
-
-                <div class="header-search">
-                    <i class="bi bi-search"></i>
-                    <input type="text" placeholder="Rechercher une organisation...">
                 </div>
 
                 <div class="header-right">
                     <div class="theme-toggle-wrap">
                         <span>Mode</span>
-                        <button class="theme-toggle" id="themeToggle">
+                        <div class="theme-toggle" id="themeToggle">
                             <div class="theme-toggle-thumb">
-                                <i class="bi bi-sun"></i>
+                                <i class="ri-sun-fill"></i>
                             </div>
-                        </button>
-                    </div>
-                    <a href="addOrganisation.php" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i>
-                        Nouvelle Organisation
-                    </a>
-                    <div class="header-user">
-                        <div class="user-avatar">
-                            <i class="bi bi-person"></i>
                         </div>
-                        <span>Admin</span>
                     </div>
+                    <a href="organisationList.php" class="btn btn-outline">
+                        <i class="bi bi-arrow-left"></i>
+                        Retour à la liste
+                    </a>
                 </div>
             </header>
 
@@ -766,116 +699,104 @@ foreach ($tousLesDons as $don) {
             <div class="admin-content">
                 <div class="content-inner">
                     <div class="card-shell">
-                        <!-- Stats -->
-                        <div class="stats-grid">
-                            <div class="stat-card">
-                                <div class="stat-value"><?= count($organisations) ?></div>
-                                <div class="stat-label">Organisations</div>
+                        <!-- En-tête de l'organisation -->
+                        <div class="org-header">
+                            <div>
+                                <h1 class="org-title"><?= htmlspecialchars($organisation['nom']) ?></h1>
+                                <p class="org-subtitle"><?= htmlspecialchars($organisation['description']) ?></p>
+                                <?php if (!empty($organisation['website_url'])): ?>
+                                    <p class="org-subtitle">
+                                        <i class="bi bi-globe me-1"></i>
+                                        <a href="<?= htmlspecialchars($organisation['website_url']) ?>" target="_blank" class="website-link">
+                                            <?= htmlspecialchars($organisation['website_url']) ?>
+                                        </a>
+                                    </p>
+                                <?php endif; ?>
                             </div>
-                            <div class="stat-card">
-                                <div class="stat-value"><?= number_format($totalGeneral, 2) ?> €</div>
-                                <div class="stat-label">Total Collecté</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-value"><?= count($organisations) > 0 ? number_format($totalGeneral / count($organisations), 2) : '0.00' ?> €</div>
-                                <div class="stat-label">Moyenne par Organisation</div>
+                            <div style="text-align: right;">
+                                <div class="stat-value"><?= number_format($totalOrganisation, 2) ?> €</div>
+                                <div class="stat-label">Total collecté</div>
                             </div>
                         </div>
 
-                        <!-- Table -->
+                        <!-- Statistiques -->
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-value"><?= count($dons) ?></div>
+                                <div class="stat-label">Nombre de dons</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value"><?= number_format($totalOrganisation, 2) ?> €</div>
+                                <div class="stat-label">Total collecté</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value"><?= count($dons) > 0 ? number_format($totalOrganisation / count($dons), 2) : '0.00' ?> €</div>
+                                <div class="stat-label">Moyenne par don</div>
+                            </div>
+                        </div>
+
+                        <!-- Tableau des dons -->
                         <div class="table-container">
                             <table class="modern-table">
                                 <thead>
                                     <tr>
                                         <th>ID</th>
-                                        <th>Nom</th>
-                                        <th>Description</th>
-                                        <th>Site Web</th>
-                                        <th>Montant Total</th>
-                                        <th>Pourcentage</th>
-                                        <th>Voir les dons</th>
+                                        <th>Donateur</th>
+                                        <th>Montant</th>
+                                        <th>Date</th>
+                                        <th>Type</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php if (empty($organisations)): ?>
+                                    <?php if (empty($dons)): ?>
                                         <tr>
-                                            <td colspan="8" class="empty-state">
-                                                <i class="bi bi-building"></i>
-                                                <div>Aucune organisation trouvée</div>
-                                                <a href="addOrganisation.php" class="btn btn-primary mt-3">
-                                                    <i class="bi bi-plus-circle me-2"></i>Créer la première organisation
-                                                </a>
+                                            <td colspan="6" class="empty-state">
+                                                <i class="bi bi-inbox"></i>
+                                                <div>Aucun don trouvé pour cette organisation</div>
+                                                <p class="text-muted mt-2">Les dons apparaîtront ici lorsqu'ils seront enregistrés.</p>
                                             </td>
                                         </tr>
                                     <?php else: ?>
-                                        <?php foreach ($organisations as $org): 
-                                            $montant = $org['montant_total'] ?? 0;
-                                            $pourcentage = $totalGeneral > 0 ? ($montant / $totalGeneral) * 100 : 0;
-                                            
-                                            // Compter les dons pour cette organisation
-                                            $nombreDons = 0;
-                                            if (isset($donsParOrganisation[$org['id']])) {
-                                                $nombreDons = count($donsParOrganisation[$org['id']]);
+                                        <?php foreach ($dons as $don): 
+                                            $nomComplet = '';
+                                            if (!empty($don['prenom_donateur']) || !empty($don['nom_donateur'])) {
+                                                $nomComplet = trim(($don['prenom_donateur'] ?? '') . ' ' . ($don['nom_donateur'] ?? ''));
                                             }
                                         ?>
                                         <tr>
-                                            <td><strong>#<?= $org['id'] ?></strong></td>
-                                            <td>
-                                                <strong>
-                                                    <i class="bi bi-building me-1"></i>
-                                                    <?= htmlspecialchars($org['nom']) ?>
-                                                </strong>
-                                            </td>
-                                            <td class="description-cell" title="<?= htmlspecialchars($org['description']) ?>">
-                                                <?= htmlspecialchars(substr($org['description'], 0, 80)) ?>...
-                                            </td>
-                                            <td>
-                                                <?php if (!empty($org['website_url'])): ?>
-                                                    <a href="<?= htmlspecialchars($org['website_url']) ?>" 
-                                                       target="_blank" 
-                                                       class="website-link"
-                                                       title="Visiter le site web">
-                                                        <i class="bi bi-globe me-1"></i>Visiter
-                                                    </a>
+                                            <td><strong>#<?= $don['id'] ?></strong></td>
+                                            <td class="donor-name">
+                                                <?php if (!empty($nomComplet)): ?>
+                                                    <i class="bi bi-person me-1"></i><?= htmlspecialchars($nomComplet) ?>
                                                 <?php else: ?>
-                                                    <span class="text-muted">-</span>
+                                                    <span class="anonymous"><i class="bi bi-eye-slash me-1"></i>Anonyme</span>
                                                 <?php endif; ?>
                                             </td>
-                                            <td class="amount <?= $montant == 0 ? 'amount-zero' : '' ?>">
-                                                <?= number_format($montant, 2) ?> €
-                                            </td>
+                                            <td class="amount"><?= number_format($don['montant'], 2) ?> €</td>
+                                            <td><?= date('d/m/Y', strtotime($don['dateDon'])) ?></td>
                                             <td>
-                                                <?php if ($totalGeneral > 0): ?>
-                                                    <div class="d-flex align-items-center gap-2">
-                                                        <div class="progress flex-grow-1">
-                                                            <div class="progress-bar" style="width: <?= min($pourcentage, 100) ?>%"></div>
-                                                        </div>
-                                                        <small class="text-muted"><?= number_format($pourcentage, 1) ?>%</small>
-                                                    </div>
+                                                <?php if ($don['typeDon'] === 'Monétaire'): ?>
+                                                    <span class="badge badge-success"><?= htmlspecialchars($don['typeDon']) ?></span>
                                                 <?php else: ?>
-                                                    <span class="text-muted">0%</span>
+                                                    <span class="badge badge-primary"><?= htmlspecialchars($don['typeDon']) ?></span>
                                                 <?php endif; ?>
                                             </td>
                                             <td>
-                                                <a href="organisationDons.php?id=<?= $org['id'] ?>" class="btn btn-info">
-                                                    <i class="bi bi-eye me-1"></i>
-                                                    Voir les dons 
+                                                <a href="../don/deleteDon.php?id=<?= $don['id'] ?>" class="btn btn-danger" 
+                                                   onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce don ? Cette action est irréversible.')">
+                                                   <i class="bi bi-trash"></i>Supprimer
                                                 </a>
-                                            </td>
-                                            <td>
-                                                <div class="action-buttons">
-                                                    <a href="modifyOrganisation.php?id=<?= $org['id'] ?>" class="btn btn-success">
-                                                        <i class="bi bi-pencil"></i>Modifier
-                                                    </a>
-                                                    <a href="deleteOrganisation.php?id=<?= $org['id'] ?>" class="btn btn-danger" 
-                                                       onclick="return confirm('Êtes-vous sûr de vouloir supprimer <?= htmlspecialchars($org['nom']) ?> ?')">
-                                                       <i class="bi bi-trash"></i>Supprimer
-                                                    </a>
-                                                </div>
                                             </td>
                                         </tr>
                                         <?php endforeach; ?>
+                                        
+                                        <!-- Ligne du total -->
+                                        <tr class="total-row">
+                                            <td colspan="2"><strong>Total <?= htmlspecialchars($organisation['nom']) ?></strong></td>
+                                            <td class="amount"><?= number_format($totalOrganisation, 2) ?> €</td>
+                                            <td colspan="3"></td>
+                                        </tr>
                                     <?php endif; ?>
                                 </tbody>
                             </table>
@@ -887,22 +808,6 @@ foreach ($tousLesDons as $don) {
     </div>
 
     <script>
-        // Simple search functionality
-        const searchInput = document.querySelector('.header-search input');
-        searchInput.addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            const rows = document.querySelectorAll('.modern-table tbody tr');
-            
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                if (text.includes(searchTerm)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        });
-
         // Thème dark / light synchronisé avec localStorage
         (function () {
             const body = document.body;
@@ -912,10 +817,10 @@ foreach ($tousLesDons as $don) {
             function applyTheme(theme) {
                 if (theme === 'light') {
                     body.classList.add('light');
-                    thumb.innerHTML = '<i class="bi bi-sun"></i>';
+                    if (thumb) thumb.innerHTML = '<i class="ri-sun-fill"></i>';
                 } else {
                     body.classList.remove('light');
-                    thumb.innerHTML = '<i class="bi bi-moon"></i>';
+                    if (thumb) thumb.innerHTML = '<i class="ri-moon-fill"></i>';
                 }
                 localStorage.setItem('ma-admin-theme', theme);
             }
@@ -926,8 +831,7 @@ foreach ($tousLesDons as $don) {
 
             if (toggle) {
                 toggle.addEventListener('click', function () {
-                    const isLight = body.classList.contains('light');
-                    const next = isLight ? 'dark' : 'light';
+                    const next = body.classList.contains('light') ? 'dark' : 'light';
                     applyTheme(next);
                 });
             }

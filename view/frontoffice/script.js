@@ -2,37 +2,41 @@
 // Validation du formulaire de don
 const form = document.getElementById('donForm');
 
-// Validation en temps réel
-form.addEventListener('input', function(e) {
-    validateField(e.target.name);
-});
+if (form) {
+    // Validation en temps réel
+    form.addEventListener('input', function(e) {
+        validateField(e.target.name);
+    });
 
-// Validation à la soumission
-form.addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const fields = ['montant', 'dateDon', 'typeDon', 'organisationId'];
-    let isValid = true;
-    
-    fields.forEach(field => {
-        if (!validateField(field)) {
-            isValid = false;
+    // Validation à la soumission
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const fields = ['montant', 'dateDon', 'typeDon', 'organisationId'];
+        let isValid = true;
+        
+        fields.forEach(field => {
+            if (!validateField(field)) {
+                isValid = false;
+            }
+        });
+        
+        if (isValid) {
+            this.submit();
+        } else {
+            // Scroll vers la première erreur
+            const firstError = document.querySelector('.error');
+            if (firstError) {
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
         }
     });
-    
-    if (isValid) {
-        this.submit();
-    } else {
-        // Scroll vers la première erreur
-        const firstError = document.querySelector('.error');
-        if (firstError) {
-            firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }
-});
+}
 
 function validateField(fieldName) {
     const field = document.querySelector(`[name="${fieldName}"]`);
+    if (!field) return true;
+    
     const value = field.value.trim();
     
     // Supprimer l'erreur précédente
@@ -127,33 +131,3 @@ function removeError(field) {
         errorElement.remove();
     }
 }
-
-// Animation au scroll
-document.addEventListener('DOMContentLoaded', function() {
-    // Smooth scroll pour les liens d'ancrage
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                target.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-            }
-        });
-    });
-
-    // Animation des cartes d'organisations
-    const orgCards = document.querySelectorAll('#organisations > div > div');
-    orgCards.forEach((card, index) => {
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(30px)';
-        
-        setTimeout(() => {
-            card.style.transition = 'all 0.6s ease';
-            card.style.opacity = '1';
-            card.style.transform = 'translateY(0)';
-        }, index * 200);
-    });
-});

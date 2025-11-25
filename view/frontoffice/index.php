@@ -1,87 +1,17 @@
 <?php
-require_once __DIR__."/../../Controller/DonController.php";
 require_once __DIR__."/../../Controller/OrganisationController.php";
-require_once __DIR__."/../../Model/Don.php";
 
-$donCtrl = new DonController();
 $orgCtrl = new OrganisationController();
-
-$message = '';
-$success = false;
-$errors = [];
-
-// Traitement du formulaire
-if ($_POST && isset($_POST['montant'])) {
-    $montant = floatval($_POST['montant']);
-    $dateDon = $_POST['dateDon'];
-    $typeDon = $_POST['typeDon'];
-    $organisationId = intval($_POST['organisationId']);
-    $nomDonateur = $_POST['nom_donateur'] ?? '';
-    $prenomDonateur = $_POST['prenom_donateur'] ?? '';
-    
-    // Validation des données
-    if (empty($montant) || $montant <= 0) {
-        $errors['montant'] = "Le montant doit être supérieur à 0";
-    }
-    if (empty($dateDon)) {
-        $errors['dateDon'] = "La date est obligatoire";
-    }
-    if (empty($typeDon)) {
-        $errors['typeDon'] = "Veuillez choisir un type de don";
-    }
-    if (empty($organisationId)) {
-        $errors['organisationId'] = "Veuillez sélectionner une organisation";
-    }
-    
-    // Si pas d'erreurs, créer le don
-    if (empty($errors)) {
-        $don = new Don(
-            null,
-            $montant,
-            new DateTime($dateDon),
-            $typeDon,
-            $organisationId,
-            null,
-            $nomDonateur,
-            $prenomDonateur
-        );
-        
-        // Validation et ajout
-        $validationErrors = $donCtrl->validateDon($don);
-        if (empty($validationErrors)) {
-            if ($donCtrl->addDon($don)) {
-                $message = "✅ Don ajouté avec succès!";
-                $success = true;
-                // Réinitialiser le formulaire
-                $_POST = [];
-            } else {
-                $message = "❌ Erreur lors de l'ajout du don";
-            }
-        } else {
-            $message = "❌ Erreurs de validation:<br>" . implode("<br>", $validationErrors);
-        }
-    } else {
-        $message = "❌ Veuillez corriger les erreurs ci-dessous";
-    }
-}
-
-// Récupérer les organisations avec leurs montants
 $organisations = $orgCtrl->listOrganisations();
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Mind Arena - Faire un Don</title>
+  <title>Mind Arena - Accueil</title>
   <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700,900" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <style>
-    .error-message {
-      color: #ff4d4d;
-      font-size: 0.85rem;
-      margin-top: 5px;
-      display: block;
-    }
     .org-card {
       transition: all 0.3s ease;
       position: relative;
@@ -90,9 +20,6 @@ $organisations = $orgCtrl->listOrganisations();
     .org-card:hover {
       transform: translateY(-5px);
       box-shadow: 0 10px 25px rgba(176, 27, 165, 0.3);
-    }
-    .org-card.clickable {
-      cursor: pointer;
     }
     .org-link-indicator {
       position: absolute;
@@ -108,6 +35,7 @@ $organisations = $orgCtrl->listOrganisations();
       justify-content: center;
       font-size: 12px;
       font-weight: bold;
+      cursor: pointer;
     }
     .visit-text {
       color: #b01ba5;
@@ -120,6 +48,50 @@ $organisations = $orgCtrl->listOrganisations();
     .org-card:hover .visit-text {
       opacity: 1;
     }
+    .btn-don-org {
+      background: #b01ba5;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.3s ease;
+      margin-top: 15px;
+      font-size: 1em;
+      text-decoration: none;
+      display: block;
+      text-align: center;
+    }
+    .btn-don-org:hover {
+      background: #d93ee7;
+      transform: translateY(-2px);
+    }
+    .btn-details {
+      background: transparent;
+      color: #b01ba5;
+      border: 2px solid #b01ba5;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.3s ease;
+      margin-top: 8px;
+      font-size: 0.9em;
+      text-decoration: none;
+      display: block;
+      text-align: center;
+    }
+    .btn-details:hover {
+      background: #b01ba5;
+      color: white;
+      transform: translateY(-2px);
+    }
+    .buttons-container {
+      margin-top: 15px;
+    }
   </style>
 </head>
 
@@ -129,7 +101,7 @@ $organisations = $orgCtrl->listOrganisations();
     <h1>🎮 Mind Arena Magazine</h1>
     <nav>
       <a href="#accueil">Accueil</a>
-      <a href="#donation">Faire un don</a>
+      <a href="addDon.php">Faire un don</a>
       <a href="#organisations">Associations</a>
       <a href="../../backoffice.php" style="color: #b01ba5;">Espace Admin</a>
     </nav>
@@ -141,114 +113,54 @@ $organisations = $orgCtrl->listOrganisations();
       Bienvenue sur le portail Mind Arena ! Jouez, gagnez de l'XP et convertissez-le en dons pour des associations caritatives. 
       Votre gaming a du sens !
     </p>
-    <a href="#donation" class="btn-don">🎁 Faire un don</a>
-  </section>
-
-  <section id="donation">
-    <div class="don-container">
-      <h2>Faire un Don</h2>
-      
-      <?php if ($message): ?>
-        <div class="<?= $success ? 'success' : 'error' ?>" style="margin-bottom: 20px; padding: 15px; border-radius: 8px; text-align: center;">
-          <?= $message ?>
-        </div>
-      <?php endif; ?>
-
-      <form method="POST" id="donForm">
-        <div>
-          <label>👤 Nom du donateur (optionnel)</label>
-          <input type="text" name="nom_donateur" 
-                 value="<?= htmlspecialchars($_POST['nom_donateur'] ?? '') ?>" 
-                 placeholder="Ex: Dupont">
-        </div>
-        
-        <div>
-          <label>👤 Prénom du donateur (optionnel)</label>
-          <input type="text" name="prenom_donateur" 
-                 value="<?= htmlspecialchars($_POST['prenom_donateur'] ?? '') ?>" 
-                 placeholder="Ex: Jean">
-        </div>
-        
-        <div>
-          <label>💶 Montant (€)</label>
-          <input type="number" name="montant" 
-                 value="<?= htmlspecialchars($_POST['montant'] ?? '') ?>" 
-                 placeholder="Ex: 50.00" step="0.01">
-          <?php if (isset($errors['montant'])): ?>
-            <span class="error-message"><?= $errors['montant'] ?></span>
-          <?php endif; ?>
-        </div>
-        
-        <div>
-          <label>📅 Date du Don</label>
-          <input type="date" name="dateDon" 
-                 value="<?= htmlspecialchars($_POST['dateDon'] ?? '') ?>">
-          <?php if (isset($errors['dateDon'])): ?>
-            <span class="error-message"><?= $errors['dateDon'] ?></span>
-          <?php endif; ?>
-        </div>
-        
-        <div>
-          <label>🎯 Type de Don</label>
-          <select name="typeDon">
-            <option value="">-- Choisir un type --</option>
-            <option value="Monétaire" <?= ($_POST['typeDon'] ?? '') == 'Monétaire' ? 'selected' : '' ?>>Monétaire</option>
-            <option value="Matériel" <?= ($_POST['typeDon'] ?? '') == 'Matériel' ? 'selected' : '' ?>>Matériel</option>
-          </select>
-          <?php if (isset($errors['typeDon'])): ?>
-            <span class="error-message"><?= $errors['typeDon'] ?></span>
-          <?php endif; ?>
-        </div>
-        
-        <div>
-          <label>🏢 Organisation Bénéficiaire</label>
-          <select name="organisationId">
-            <option value="">-- Sélectionner une organisation --</option>
-            <?php foreach ($organisations as $org): ?>
-              <option value="<?= $org['id'] ?>" 
-                <?= ($_POST['organisationId'] ?? '') == $org['id'] ? 'selected' : '' ?>>
-                <?= htmlspecialchars($org['nom']) ?> 
-                (<?= number_format($org['montant_total'] ?? 0, 2) ?> € collectés)
-              </option>
-            <?php endforeach; ?>
-          </select>
-          <?php if (isset($errors['organisationId'])): ?>
-            <span class="error-message"><?= $errors['organisationId'] ?></span>
-          <?php endif; ?>
-        </div>
-        
-        <button type="submit">💾 Enregistrer le Don</button>
-      </form>
-    </div>
+    <a href="addDon.php" class="btn-don">🎁 Faire un don</a>
   </section>
 
   <section id="organisations" style="background: #2d1854; padding: 80px 20px; text-align: center;">
     <h2 style="color: white; margin-bottom: 50px; font-size: 2.5rem;">Nos Associations Partenaires</h2>
     <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; max-width: 1200px; margin: 0 auto;">
       <?php foreach ($organisations as $org): ?>
-        <div class="org-card <?= !empty($org['website_url']) ? 'clickable' : '' ?>" 
-             style="background: rgba(255,255,255,0.1); padding: 25px; border-radius: 15px; width: 280px; border: 1px solid #b01ba5; cursor: <?= !empty($org['website_url']) ? 'pointer' : 'default' ?>;"
-             <?php if (!empty($org['website_url'])): ?>
-             onclick="window.open('<?= htmlspecialchars($org['website_url']) ?>', '_blank')"
-             <?php endif; ?>>
+        <div class="org-card" 
+             style="background: rgba(255,255,255,0.1); padding: 25px; border-radius: 15px; width: 320px; border: 1px solid #b01ba5; position: relative;">
           
           <?php if (!empty($org['website_url'])): ?>
-            <div class="org-link-indicator" title="Site web disponible">🔗</div>
+            <div class="org-link-indicator" title="Site web disponible" 
+                 onclick="window.open('<?= htmlspecialchars($org['website_url']) ?>', '_blank')">
+                 🔗
+            </div>
           <?php endif; ?>
           
           <h3 style="color: #b01ba5; margin-bottom: 15px; font-size: 1.3rem;">
             <?= htmlspecialchars($org['nom']) ?>
           </h3>
-          <p style="color: #ccc; font-size: 0.95em; margin-bottom: 10px;">
-            <?= htmlspecialchars(substr($org['description'], 0, 100)) ?>
+          <p style="color: #ccc; font-size: 0.95em; margin-bottom: 15px; min-height: 60px;">
+            <?= htmlspecialchars(substr($org['description'], 0, 100)) ?>...
           </p>
-          <div style="color: #4cff4c; font-weight: bold; font-size: 1.1rem;">
+          <div style="color: #4cff4c; font-weight: bold; font-size: 1.1rem; margin-bottom: 15px;">
             <?= number_format($org['montant_total'] ?? 0, 2) ?> € collectés
+          </div>
+          
+          <div class="buttons-container">
+            <!-- BOUTON DE DON QUI REDIRIGE VERS addDon.php -->
+            <a href="addDon.php?orgId=<?= $org['id'] ?>" class="btn-don-org">
+              🎁 Faire un don
+            </a>
+            
+            <!-- BOUTON DÉTAILS QUI OUVRE LE SITE DE L'ORGANISATION -->
+            <?php if (!empty($org['website_url'])): ?>
+              <button class="btn-details" onclick="window.open('<?= htmlspecialchars($org['website_url']) ?>', '_blank')">
+                📋 Voir les détails
+              </button>
+            <?php else: ?>
+              <button class="btn-details" style="opacity: 0.5; cursor: not-allowed;" disabled>
+                📋 Détails non disponibles
+              </button>
+            <?php endif; ?>
           </div>
           
           <?php if (!empty($org['website_url'])): ?>
             <div class="visit-text">
-              Cliquez pour visiter le site ↗
+              Cliquez 🔗 pour visiter le site
             </div>
           <?php endif; ?>
         </div>
@@ -261,6 +173,56 @@ $organisations = $orgCtrl->listOrganisations();
     <br><small>Jouez utile, donnez intelligemment</small>
   </footer>
 
-  <script src="script.js"></script>
+  <script>
+    // Animation au scroll
+    document.addEventListener('DOMContentLoaded', function() {
+      // Smooth scroll pour les liens d'ancrage
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+          e.preventDefault();
+          const target = document.querySelector(this.getAttribute('href'));
+          if (target) {
+            target.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start'
+            });
+          }
+        });
+      });
+
+      // Animation des cartes d'organisations
+      const orgCards = document.querySelectorAll('#organisations > div > div');
+      orgCards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(30px)';
+        
+        setTimeout(() => {
+          card.style.transition = 'all 0.6s ease';
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        }, index * 200);
+      });
+
+      // Animation des boutons au hover
+      document.querySelectorAll('.btn-details').forEach(btn => {
+        btn.addEventListener('mouseenter', function() {
+          if (!this.disabled) {
+            this.style.boxShadow = '0 5px 15px rgba(176, 27, 165, 0.4)';
+          }
+        });
+        
+        btn.addEventListener('mouseleave', function() {
+          this.style.boxShadow = 'none';
+        });
+      });
+    });
+
+    // Fonction pour ouvrir le site avec confirmation
+    function openOrganizationSite(url, orgName) {
+      if (confirm(`Voulez-vous visiter le site de ${orgName} ?`)) {
+        window.open(url, '_blank');
+      }
+    }
+  </script>
 </body>
 </html>
