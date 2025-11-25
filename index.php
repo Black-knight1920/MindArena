@@ -1,54 +1,60 @@
-
 <?php
-require_once 'config/Database.php';
-require_once 'controllers/ForumController.php';
-require_once 'controllers/PublicationController.php';
+// index.php
 
-$db = new Database();
-$pdo = $db->getConnection();
+require_once __DIR__ . '/config/Database.php';
+require_once __DIR__ . '/controllers/ForumController.php';
 
-$forum = new ForumController($pdo);
-$pub = new PublicationController($pdo);
+$db   = new Database();
+$pdo  = $db->getConnection();
+$forumController = new ForumController($pdo);
 
-$uri = strtok($_SERVER['REQUEST_URI'], '?');
+// action passée en GET, ex: index.php?action=forums
+$action = $_GET['action'] ?? 'home';
 
-switch ($uri) {
-
-    case '/mindarena_forum':
-    case '/mindarena_forum/':
-    case '/mindarena_forum/front':
-    case '/mindarena_forum/front/':
-        $forum->listFront();
+switch ($action) {
+    case 'home':
+        $forumController->home();
         break;
 
-    case '/mindarena_forum/front/forums':
-        $forum->listFront();
+    case 'forums':          // liste des forums (front/forums)
+        $forumController->listFront();
         break;
 
-    case '/mindarena_forum/front/add-forum':
-        $forum->addFront();
+    case 'add-forum':       // front/add-forum
+        $forumController->addFront();
         break;
 
-    case '/mindarena_forum/front/edit-forum':
-        $forum->editFront($_GET['id']);
+    case 'delete-forum':
+        $forumController->deleteFront();
         break;
 
-    case '/mindarena_forum/front/delete-forum':
-        $forum->deleteFront($_GET['id']);
+    case 'publications':
+        require_once __DIR__ . '/controllers/PublicationController.php';
+        $publicationController = new PublicationController($pdo);
+        $publicationController->listFront();
         break;
 
-    case '/mindarena_forum/front/publications':
-        $pub->listFront();
+    case 'add-publication':
+        require_once __DIR__ . '/controllers/PublicationController.php';
+        $publicationController = new PublicationController($pdo);
+        $publicationController->addFront();
         break;
 
-    case '/mindarena_forum/front/add-publication':
-        $pub->addFront();
+    case 'delete-publication':
+        require_once __DIR__ . '/controllers/PublicationController.php';
+        $publicationController = new PublicationController($pdo);
+        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        $forum_id = isset($_GET['forum_id']) ? (int)$_GET['forum_id'] : 0;
+        $publicationController->deleteFront($id, $forum_id);
         break;
 
-    case '/mindarena_forum/front/delete-publication':
-        $pub->deleteFront($_GET['id']);
+    case 'report':
+        require_once __DIR__ . '/controllers/ReportController.php';
+        $reportController = new ReportController($pdo);
+        $reportController->addFront();
         break;
 
     default:
-        echo "<h1 style='color:red;text-align:center'>404 - Page non trouvée</h1>";
+        $forumController->home();
+        break;
 }

@@ -1,58 +1,121 @@
 <?php
+// models/Forum.php
 
-class Forum {
+class Forum
+{
+    private PDO $pdo;
 
-    private $pdo;
-
-    public function __construct($pdo) {
+    public function __construct(PDO $pdo)
+    {
         $this->pdo = $pdo;
     }
 
-    public function count() {
-        return $this->pdo->query("SELECT COUNT(*) AS c FROM forums")
-                         ->fetch()['c'];
+    /* ---------------------------------------------------------
+       COMPTE & LISTES
+    --------------------------------------------------------- */
+
+    public function count(): int
+    {
+        $sql = "SELECT COUNT(*) FROM forums";
+        return (int) $this->pdo->query($sql)->fetchColumn();
     }
 
-    public function getAll() {
-        return $this->pdo->query("
-            SELECT * FROM forums 
-            ORDER BY id DESC
-        ")->fetchAll();
+    /**
+     * Liste complète pour l’admin.
+     */
+    public function getAll(): array
+    {
+        $sql = "SELECT *
+                FROM forums
+                ORDER BY created_at DESC, id DESC";
+        $stmt = $this->pdo->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
-    /* ⭐ REQUIRED BY FRONT-END (ForumController::listFront) */
-    public function getAllFront() {
-        return $this->pdo->query("
-            SELECT * FROM forums 
-            ORDER BY id DESC
-        ")->fetchAll();
+    /**
+     * Liste pour le front (home + /front/forums).
+     * Tu peux filtrer/limiter ici si tu veux.
+     */
+    public function getAllFront(): array
+    {
+        $sql = "SELECT id, title, description, created_by, created_at
+                FROM forums
+                ORDER BY created_at DESC, id DESC";
+        $stmt = $this->pdo->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
-    public function getById($id) {
-        $stmt = $this->pdo->prepare("SELECT * FROM forums WHERE id=?");
-        $stmt->execute([$id]);
-        return $stmt->fetch();
+    /* ---------------------------------------------------------
+       CRUD
+    --------------------------------------------------------- */
+
+    public function getById(int $id): ?array
+    {
+        $sql = "SELECT * FROM forums WHERE id = :id";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':id' => $id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
     }
 
-    public function create($title, $description) {
-        $stmt = $this->pdo->prepare("
-            INSERT INTO forums (title, description)
-            VALUES (?, ?)
-        ");
-        return $stmt->execute([$title, $description]);
+    /**
+     * Création d’un forum (admin ou front).
+     *
+     * @param string      $title
+     * @param string|null $description
+     * @param string      $createdBy  Pseudo / nom du créateur
+     */
+    public function create(string $title, ?string $description, string $createdBy): bool
+    {
+        $sql = "INSERT INTO forums (title, description, created_by, created_at)
+                VALUES (:title, :description, :created_by, NOW())";
+        $stmt = $this->pdo->prepare($sql);
+
+        return $stmt->execute([
+            ':title'       => $title,
+            ':description' => $description !== '' ? $description : null,
+            ':created_by'  => $createdBy !== '' ? $createdBy : 'Inconnu',
+        ]);
     }
 
-    public function update($id, $title, $description) {
-        $stmt = $this->pdo->prepare("
-            UPDATE forums 
-            SET title=?, description=? 
-            WHERE id=?
-        ");
-        return $stmt->execute([$title, $description, $id]);
+    /**
+     * Mise à jour d’un forum.
+     * Si $createdBy est null, on ne touche pas à la colonne created_by.
+     */
+    public function update(
+        int $id,
+        string $title,
+        ?string $description,
+        ?string $createdBy = null
+    ): bool {
+        $params = [
+            ':id'          => $id,
+            ':title'       => $title,
+            ':description' => $description !== '' ? $description : null,
+        ];
+
+        if ($createdBy !== null) {
+            $sql = "UPDATE forums
+                    SET title = :title,
+                        description = :description,
+                        created_by = :created_by
+                    WHERE id = :id";
+            $params[':created_by'] = $createdBy !== '' ? $createdBy : 'Inconnu';
+        } else {
+            $sql = "UPDATE forums
+                    SET title = :title,
+                        description = :description
+                    WHERE id = :id";
+        }
+
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute($params);
     }
 
-    public function delete($id) {
-        $stmt = $this->pdo->prepare("DELETE FROM forums WHERE id=?");
-        return $stmt->execute([$id]);
+    public function delete(int $id): bool
+    {
+        $sql = "DELETE FROM forums WHERE id = :id";
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute([':id' => $id]);
     }
 }

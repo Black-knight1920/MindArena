@@ -28,7 +28,7 @@ class Publication {
         return $stmt->fetch();
     }
 
-    /* ⭐ REQUIRED BY FRONT PublicationController::listFront() */
+
     public function getByForum($forum_id) {
         $stmt = $this->pdo->prepare("
             SELECT p.*, f.title AS forum_title

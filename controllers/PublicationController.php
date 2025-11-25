@@ -1,79 +1,119 @@
 <?php
-require_once __DIR__ . '/../models/Publication.php';
-require_once __DIR__ . '/../models/Forum.php';
 
-class PublicationController {
-    private $model;
-    private $forums;
+class PublicationController
+{
+    private Publication $publications;
+    private Forum $forums;
 
-    public function __construct($pdo) {
-        $this->model = new Publication($pdo);
-        $this->forums = new Forum($pdo);
+    public function __construct(PDO $pdo)
+    {
+        require_once __DIR__ . '/../models/Publication.php';
+        require_once __DIR__ . '/../models/Forum.php';
+
+        $this->publications = new Publication($pdo);
+        $this->forums       = new Forum($pdo);
     }
 
-    public function listFront() {
+    private function render(string $view, array $vars = []): void
+    {
+        extract($vars);
+        include __DIR__ . '/../views/front/' . $view;
+    }
 
-        // Ensure defaults
-        $forum = null;
-        $publications = [];
+    private function clean(string $v): string
+    {
+        return trim($v);
+    }
 
-        if (isset($_GET['forum_id'])) {
-            $forumId = $_GET['forum_id'];
+    private function validatePublication(array $data): array
+    {
+        $errors = [];
+        $clean  = [];
 
-            // GET THE REAL FORUM ARRAY
-            $forum = $this->forums->getById($forumId);
+        $clean['forum_id'] = (int)($data['forum_id'] ?? 0);
+        $clean['author']   = $this->clean($data['author'] ?? '');
+        $clean['content']  = $this->clean($data['content'] ?? '');
 
-            // If forum not found
-            if (!$forum) {
-                die("<h2 style='color:white;text-align:center;margin-top:40px;'>❌ Forum introuvable</h2>");
-            }
-
-            // Fetch all publications for this forum
-            $publications = $this->model->getByForum($forumId);
+        if ($clean['forum_id'] <= 0) {
+            $errors[] = "Forum invalide.";
         }
 
-        // Make $forum available to the view
-        include __DIR__ . '/../views/front/publicationList.php';
+        if ($clean['author'] === '') {
+            $errors[] = "L'auteur est obligatoire.";
+        } elseif (mb_strlen($clean['author']) < 3) {
+            $errors[] = "Le nom de l'auteur doit contenir au moins 3 caractères.";
+        }
+
+        if ($clean['content'] === '') {
+            $errors[] = "Le contenu est obligatoire.";
+        } elseif (mb_strlen($clean['content']) < 5) {
+            $errors[] = "Le contenu doit contenir au moins 5 caractères.";
+        }
+
+        return [$clean, $errors];
     }
 
+    /* ---------- Actions FRONT ---------- */
 
-    public function addFront() {
+    public function listFront(): void
+    {
+        $forum_id = isset($_GET['forum_id']) ? (int)$_GET['forum_id'] : 0;
+        if ($forum_id <= 0) {
+            die("Forum invalide.");
+        }
+
+        $forum = $this->forums->getById($forum_id);
+        if (!$forum) {
+            die("Forum introuvable.");
+        }
+
+        $publications = $this->publications->getByForum($forum_id);
+
+        $this->render('publicationList.php', compact('forum', 'publications'));
+    }
+
+    public function addFront(): void
+    {
+        $forum_id = isset($_GET['forum_id']) ? (int)$_GET['forum_id'] : 0;
+        if ($forum_id <= 0) {
+            die("Forum invalide.");
+        }
+
+        $forum = $this->forums->getById($forum_id);
+        if (!$forum) {
+            die("Forum introuvable.");
+        }
+
         $errors = [];
+        $old    = ['author' => '', 'content' => ''];
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-            $forum_id = $_POST['forum_id'];
-            $author   = trim($_POST['author']);
-            $content  = trim($_POST['content']);
-
-            if (!$author) $errors[] = "Nom requis";
-            if (!$content) $errors[] = "Contenu requis";
+            [$clean, $errors] = $this->validatePublication($_POST);
 
             if (empty($errors)) {
-                $this->model->create($forum_id, $author, $content);
-                header("Location: /mindarena_forum/front/publications?forum_id=$forum_id");
+                $this->publications->create($clean['forum_id'], $clean['author'], $clean['content']);
+                header("Location: index.php?action=publications&forum_id=" . $clean['forum_id']);
                 exit;
             }
+
+            $old = $clean;
         }
 
-        include __DIR__ . '/../views/front/publicationAdd.php';
+        $this->render('publicationAdd.php', compact('forum', 'errors', 'old'));
     }
 
-
-    public function deleteFront($id) {
-
-        $pub = $this->model->getById($id);
-
-        if (!$pub) {
-            die("Publication introuvable");
+    public function deleteFront(int $id, int $forum_id): void
+    {
+        if ($id > 0) {
+            $this->publications->delete($id);
         }
 
-        $forumId = $pub['forum_id'];
-
-        $this->model->delete($id);
-
-        header("Location: /mindarena_forum/front/publications?forum_id=$forumId");
+        if ($forum_id > 0) {
+            header("Location: index.php?action=publications&forum_id=" . $forum_id);
+        } else {
+            header("Location: index.php?action=forums");
+        }
         exit;
     }
-    
 }

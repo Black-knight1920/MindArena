@@ -1,0 +1,23 @@
+# === MIND ARENA GITIGNORE ===
+
+# Ignore environment / secrets
+config/ai.php
+.env
+.env.local
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore IDE / editor configs
+.vscode/
+.idea/
+
+# Ignore vendor / cache
+vendor/
+node_modules/
+
+# Ignore temporary uploads and logs
+uploads/
+tmp/
+logs/

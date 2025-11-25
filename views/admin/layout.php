@@ -2,255 +2,518 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title><?= $pageTitle ?> - Admin Panel</title>
+    <title><?= htmlspecialchars($pageTitle ?? 'Admin') ?> – Admin Panel</title>
 
-    <!-- Bootstrap -->
+    <!-- Bootstrap (optionnel, pour la grille & quelques utilitaires) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Remix Icons -->
     <link href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css" rel="stylesheet">
 
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <style>
+        /* ================= THEME VARIABLES ================= */
+        :root {
+            --bg: #0f1018;
+            --bg-soft: #151626;
+            --sidebar-bg: #11121b;
+            --sidebar-border: rgba(255,255,255,0.05);
+            --sidebar-text: #e5e7eb;
+            --sidebar-muted: #9ca3af;
 
-    /* GLOBAL --------------------------- */
-    body {
-        background: #0d0d1a;
-        color: #ffffff;
-        margin: 0;
-        font-family: "Inter", sans-serif;
-    }
+            --header-bg: rgba(15,16,24,0.96);
 
-    h1, h2, h3, h4, h5 {
-        font-weight: 600;
-        letter-spacing: .5px;
-    }
+            --card-bg: #181927;
+            --card-border: rgba(148,163,184,0.25);
 
-    /* SIDEBAR -------------------------- */
-    .sidebar {
-        width: 260px;
-        height: 100vh;
-        background: #131327;
-        position: fixed;
-        left: 0;
-        top: 0;
-        padding: 32px 22px;
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-        box-shadow: 4px 0 25px rgba(0,0,0,0.5);
-    }
+            --primary: #8b5cf6;
+            --primary-soft: rgba(139,92,246,0.13);
+            --primary-hover: #a855f7;
 
-    .sidebar h2 {
-        margin-bottom: 25px;
-        color: #fff;
-        font-size: 22px;
-    }
+            --text: #f9fafb;
+            --text-muted: #9ca3af;
+            --border-subtle: rgba(148,163,184,0.25);
 
-    .sidebar a {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 16px;
-        font-size: 15px;
-        color: #c7c7ff;
-        background: #1b1b38;
-        border-radius: 10px;
-        text-decoration: none;
-        font-weight: 500;
-        transition: .25s;
-    }
+            --shadow-soft: 0 18px 45px rgba(15,23,42,0.55);
+        }
 
-    .sidebar a:hover {
-        background: #5b22f0;
-        color: #fff;
-        transform: translateX(6px);
-        box-shadow: 0 5px 12px rgba(90,40,255,.5);
-    }
+        body.light {
+            --bg: #f4f5fb;
+            --bg-soft: #ffffff;
+            --sidebar-bg: #ffffff;
+            --sidebar-border: rgba(15,23,42,0.06);
+            --sidebar-text: #111827;
+            --sidebar-muted: #6b7280;
 
-    .sidebar a.active {
-        background: #693bff;
-        box-shadow: 0 0 12px rgba(105,60,255,.6);
-    }
+            --header-bg: rgba(255,255,255,0.96);
 
-    /* TOPBAR ---------------------------- */
-    .topbar {
-        margin-left: 260px;
-        height: 70px;
-        background: rgba(255,255,255,0.06);
-        backdrop-filter: blur(12px);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 30px;
-        border-bottom: 1px solid rgba(255,255,255,0.08);
-        position: sticky;
-        top: 0;
-        z-index: 10;
-    }
+            --card-bg: #ffffff;
+            --card-border: rgba(15,23,42,0.07);
 
-    .search-bar {
-        width: 280px;
-        padding: 9px 14px;
-        border-radius: 12px;
-        border: none;
-        background: rgba(255,255,255,0.12);
-        color: #fff;
-    }
+            --primary: #7c3aed;
+            --primary-soft: rgba(124,58,237,0.09);
+            --primary-hover: #6d28d9;
 
-    .avatar {
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
-        background: url('https://i.pravatar.cc/300') center/cover;
-        border: 2px solid #8358ff;
-        cursor: pointer;
-    }
+            --text: #111827;
+            --text-muted: #6b7280;
+            --border-subtle: rgba(148,163,184,0.35);
 
-    /* CONTENT ---------------------------- */
-    .content {
-        margin-left: 280px;
-        margin-top: 30px;
-        padding: 35px;
-        max-width: 1200px;
-        animation: fadeIn .4s ease;
-    }
+            --shadow-soft: 0 18px 40px rgba(15,23,42,0.12);
+        }
 
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        /* ================= GLOBAL ================= */
+        * {
+            box-sizing: border-box;
+        }
 
-    /* CARDS ------------------------------ */
-    .card-dark {
-        background: #1b1b30;
-        padding: 25px;
-        border-radius: 16px;
-        border: 1px solid rgba(255,255,255,0.08);
-        box-shadow: 0 0 18px rgba(0,0,0,0.35);
-        transition: .25s;
-    }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+            background: radial-gradient(circle at top left, rgba(139,92,246,0.16), transparent 55%),
+                        radial-gradient(circle at bottom right, rgba(236,72,153,0.14), transparent 55%),
+                        var(--bg);
+            color: var(--text);
+            transition: background .25s ease, color .25s ease;
+        }
 
-    .card-dark:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 0 25px rgba(120,60,255,0.5);
-    }
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
 
-    /* TABLES ----------------------------- */
-    .table-glass {
-        width: 100%;
-        background: rgba(255,255,255,0.04);
-        border-radius: 14px;
-        overflow: hidden;
-        border: 1px solid rgba(255,255,255,0.08);
-        backdrop-filter: blur(8px);
-    }
+        /* ================= LAYOUT ================= */
+        .admin-shell {
+            display: flex;
+            min-height: 100vh;
+        }
 
-    .table-glass thead {
-        background: rgba(255,255,255,0.08);
-    }
+        /* ---------- SIMPLE SIDEBAR ---------- */
+        .admin-sidebar {
+            width: 230px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--sidebar-border);
+            display: flex;
+            flex-direction: column;
+            padding: 18px 16px 18px;
+        }
 
-    .table-glass th {
-        font-size: 14px;
-        padding: 14px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: #d4cfff;
-    }
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 4px 18px;
+            border-bottom: 1px solid var(--sidebar-border);
+            margin-bottom: 16px;
+        }
 
-    .table-glass td {
-        padding: 14px;
-        color: #efefff;
-        border-bottom: 1px solid rgba(255,255,255,0.06);
-    }
+        .sidebar-logo {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #8b5cf6, #ec4899);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 18px;
+            box-shadow: 0 10px 25px rgba(79,70,229,0.6);
+        }
 
-    .table-glass tr:hover {
-        background: rgba(255,255,255,0.12);
-        transform: scale(1.01);
-        transition: .22s;
-    }
+        .sidebar-title {
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-title span:first-child {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--sidebar-text);
+        }
+        .sidebar-title span:last-child {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .18em;
+            color: var(--sidebar-muted);
+        }
 
-    /* BUTTONS ----------------------------- */
-    .btn-create {
-        background: linear-gradient(135deg,#6e3bff,#a678ff);
-        padding: 10px 20px;
-        border-radius: 10px;
-        color: white;
-        font-weight: 600;
-        transition: .25s;
-    }
+        .sidebar-nav {
+            margin-top: 10px;
+            list-style: none;
+            padding: 0;
+        }
 
-    .btn-create:hover {
-        transform: translateY(-3px);
-        background: linear-gradient(135deg,#8358ff,#c49aff);
-        box-shadow: 0 0 12px rgba(150,120,255,.6);
-    }
+        .sidebar-nav-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--sidebar-muted);
+            letter-spacing: .12em;
+            margin: 10px 6px 6px;
+        }
 
-    .btn-edit {
-        background: #305bff;
-        padding: 6px 12px;
-        border-radius: 8px;
-        color: white;
-    }
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 10px;
+            border-radius: 9px;
+            font-size: 14px;
+            color: var(--sidebar-text);
+            transition: background .18s ease, color .18s ease, transform .12s ease;
+        }
 
-    .btn-delete {
-        background: #d53043;
-        padding: 6px 12px;
-        border-radius: 8px;
-        color: white;
-    }
+        .sidebar-link i {
+            font-size: 17px;
+        }
 
-    .form-card {
-        background: #1c1c38;
-        padding: 25px;
-        border-radius: 12px;
-        border: 1px solid rgba(255,255,255,0.08);
-        width: 600px;
-    }
+        .sidebar-link:hover {
+            background: var(--primary-soft);
+            color: var(--primary);
+            transform: translateX(2px);
+        }
 
-    .form-control {
-        background: rgba(255,255,255,0.08);
-        border: 1px solid rgba(255,255,255,0.15);
-        color: white;
-        border-radius: 10px;
-    }
+        .sidebar-link.active {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 12px 25px rgba(88,28,135,0.6);
+        }
 
-    .form-control:focus {
-        border-color: #8a63ff;
-        box-shadow: 0 0 10px rgba(138,99,255,.4);
-    }
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 14px;
+            border-top: 1px dashed var(--sidebar-border);
+            font-size: 12px;
+            color: var(--sidebar-muted);
+        }
 
+        .sidebar-footer a {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            margin-top: 6px;
+            padding: 6px 8px;
+            border-radius: 999px;
+            transition: background .18s ease, color .18s ease;
+        }
+
+        .sidebar-footer a:hover {
+            background: var(--primary-soft);
+            color: var(--primary);
+        }
+
+        /* ---------- MAIN AREA ---------- */
+        .admin-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        /* TOP BAR */
+        .admin-header {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            height: 60px;
+            background: var(--header-bg);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 22px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .header-left-title {
+            font-weight: 600;
+        }
+
+        .header-left-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .header-search {
+            flex: 0 0 280px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            background: rgba(15,23,42,0.4);
+            border-radius: 999px;
+            border: 1px solid rgba(148,163,184,0.35);
+        }
+
+        body.light .header-search {
+            background: rgba(255,255,255,0.7);
+            border-color: rgba(148,163,184,0.5);
+        }
+
+        .header-search input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 13px;
+            background: transparent;
+            color: var(--text);
+        }
+
+        .header-search i {
+            font-size: 16px;
+            color: var(--text-muted);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* Toggle mode */
+        .theme-toggle-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .12em;
+            color: var(--text-muted);
+        }
+
+        .theme-toggle {
+            width: 46px;
+            height: 22px;
+            border-radius: 999px;
+            background: rgba(15,23,42,0.75);
+            position: relative;
+            cursor: pointer;
+        }
+
+        body.light .theme-toggle {
+            background: rgba(148,163,184,0.6);
+        }
+
+        .theme-toggle-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 999px;
+            background: #f9fafb;
+            position: absolute;
+            top: 2px;
+            left: 3px;
+            transition: transform .22s ease;
+            box-shadow: 0 6px 16px rgba(15,23,42,0.65);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #0f172a;
+        }
+
+        body.light .theme-toggle-thumb {
+            transform: translateX(22px);
+        }
+
+        .header-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+        }
+
+        .user-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #8b5cf6, #ec4899);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 16px;
+            box-shadow: 0 10px 20px rgba(88,28,135,0.7);
+        }
+
+        /* CONTENT WRAP */
+        .admin-content {
+            flex: 1;
+            padding: 24px 24px 26px;
+            min-height: calc(100vh - 60px);
+        }
+
+        .content-inner {
+            max-width: 1320px;
+            margin: 0 auto;
+        }
+
+        .card-shell {
+            background: var(--card-bg);
+            border-radius: 18px;
+            border: 1px solid var(--card-border);
+            box-shadow: var(--shadow-soft);
+            padding: 22px 22px 20px;
+        }
+
+        /* Simple utilities */
+        .text-muted-small {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 960px) {
+            .admin-sidebar {
+                display: none; /* version simple desktop only */
+            }
+            .admin-header {
+                padding-inline: 14px;
+            }
+            .header-search {
+                display: none;
+            }
+            .admin-content {
+                padding-inline: 14px;
+            }
+        }
     </style>
 </head>
 
 <body>
 
-    <!-- SIDEBAR -->
-    <div class="sidebar">
-        <h2><i class="ri-shield-user-fill"></i> Admin Panel</h2>
+<div class="admin-shell">
 
-        <a href="admin.php?action=dashboard" class="<?= ($active=='dashboard')?'active':'' ?>">
-            <i class="ri-dashboard-line"></i> Dashboard
-        </a>
+    <!-- ============ SIDEBAR SIMPLE ============ -->
+    <aside class="admin-sidebar">
+        <div class="sidebar-brand">
+            <div class="sidebar-logo">
+                <i class="ri-shield-user-line"></i>
+            </div>
+            <div class="sidebar-title">
+                <span>MindArena</span>
+                <span>Admin panel</span>
+            </div>
+        </div>
 
-        <a href="admin.php?action=forums" class="<?= ($active=='forums')?'active':'' ?>">
-            <i class="ri-folder-3-line"></i> Forums
-        </a>
+        <div class="sidebar-nav-label">Navigation</div>
+        <ul class="sidebar-nav">
+            <li>
+                <a href="admin.php?action=dashboard"
+                   class="sidebar-link <?= ($activeMenu ?? '') === 'dashboard' ? 'active' : '' ?>">
+                    <i class="ri-dashboard-line"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a href="admin.php?action=forums"
+                   class="sidebar-link <?= ($activeMenu ?? '') === 'forums' ? 'active' : '' ?>">
+                    <i class="ri-layout-grid-line"></i>
+                    <span>Forums</span>
+                </a>
+            </li>
+            <li>
+                <a href="admin.php?action=reports"
+                   class="sidebar-link <?= ($activeMenu ?? '') === 'reports' ? 'active' : '' ?>">
+                    <i class="ri-flag-2-line"></i>
+                    <span>Signalements</span>
+                </a>
+            </li>
+        </ul>
 
-        <a href="admin.php?action=publications" class="<?= ($active=='publications')?'active':'' ?>">
-            <i class="ri-file-text-line"></i> Publications
-        </a>
+        <div class="sidebar-footer">
+            <div>Connecté en tant que <strong>Admin</strong></div>
+            <a href="index.php">
+                <i class="ri-arrow-left-line"></i> Retour au site
+            </a>
+        </div>
+    </aside>
+
+    <!-- ============ MAIN AREA ============ -->
+    <div class="admin-main">
+
+        <!-- TOP BAR -->
+        <header class="admin-header">
+            <div class="header-left">
+                <div class="header-left-title"><?= htmlspecialchars($pageTitle ?? '') ?></div>
+                <?php if (!empty($pageSubtitle)): ?>
+                    <div class="header-left-sub"><?= htmlspecialchars($pageSubtitle) ?></div>
+                <?php endif; ?>
+            </div>
+
+            <div class="header-right">
+                <div class="header-search">
+                    <i class="ri-search-line"></i>
+                    <input type="text" placeholder="Rechercher…">
+                </div>
+
+                <div class="theme-toggle-wrap">
+                    <span>Mode</span>
+                    <div id="themeToggle" class="theme-toggle">
+                        <div class="theme-toggle-thumb">
+                            <i class="ri-moon-fill"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="header-user">
+                    <span class="text-muted-small">Admin</span>
+                    <div class="user-avatar">
+                        <i class="ri-user-3-line"></i>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- CONTENT -->
+        <main class="admin-content">
+            <div class="content-inner">
+                <?php
+                if (!empty($viewFile) && is_file($viewFile)) {
+                    include $viewFile;
+                } else {
+                    echo '<div class="card-shell"><p class="text-muted-small">Vue introuvable.</p></div>';
+                }
+                ?>
+            </div>
+        </main>
+
     </div>
+</div>
 
-    <!-- TOPBAR -->
-    <div class="topbar">
-        <input type="text" class="search-bar" placeholder="Recherche…">
-        <div class="avatar"></div>
-    </div>
+<script>
+    // Thème dark / light synchronisé avec localStorage
+    (function () {
+        const body = document.body;
+        const toggle = document.getElementById('themeToggle');
+        const thumb = document.querySelector('.theme-toggle-thumb');
 
-    <!-- CONTENT -->
-    <div class="content">
-        <?php include $viewFile; ?>
-    </div>
+        function applyTheme(theme) {
+            if (theme === 'light') {
+                body.classList.add('light');
+                if (thumb) thumb.innerHTML = '<i class="ri-sun-fill"></i>';
+            } else {
+                body.classList.remove('light');
+                if (thumb) thumb.innerHTML = '<i class="ri-moon-fill"></i>';
+            }
+            localStorage.setItem('ma-admin-theme', theme);
+        }
+
+        // Initial
+        const saved = localStorage.getItem('ma-admin-theme') || 'dark';
+        applyTheme(saved);
+
+        if (toggle) {
+            toggle.addEventListener('click', function () {
+                const next = body.classList.contains('light') ? 'dark' : 'light';
+                applyTheme(next);
+            });
+        }
+    })();
+</script>
 
 </body>
 </html>

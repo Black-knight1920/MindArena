@@ -1,68 +1,86 @@
 <?php
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
+// ============ MindArena Admin Router ============
 
-require_once __DIR__ . "/config/Database.php";
-require_once __DIR__ . "/controllers/AdminController.php";
+// Load DB
+require_once __DIR__ . '/config/Database.php';
 
+// Load AdminController
+require_once __DIR__ . '/controllers/AdminController.php';
+
+// Create DB connection
 $db = new Database();
 $pdo = $db->getConnection();
 
+// Create admin controller
 $admin = new AdminController($pdo);
 
-// simple action routing
+// Detect action
 $action = $_GET['action'] ?? 'dashboard';
 
-function needId() {
-    if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
-        die("<h2 style='color:red;text-align:center;margin-top:40px;'>Invalid ID</h2>");
-    }
-}
-
+// Routing
 switch ($action) {
 
-    case "dashboard": 
-        $admin->dashboard(); 
+    /* ======================================================
+       DASHBOARD
+    ====================================================== */
+    case 'dashboard':
+        $admin->dashboard();
         break;
 
-    /* FORUMS */
-    case "forums":
+    /* ======================================================
+       FORUMS
+    ====================================================== */
+    case 'forums':
         $admin->forumList();
         break;
 
-    case "forum-add":
+    case 'forum-add':
         $admin->forumAdd();
         break;
 
-    case "forum-edit":
-        needId();
+    case 'forum-edit':
         $admin->forumEdit();
         break;
 
-    case "forum-delete":
-        needId();
+    case 'forum-delete':
         $admin->forumDelete();
         break;
 
-    /* PUBLICATIONS */
-    case "publications":
+    /* ======================================================
+       PUBLICATIONS
+    ====================================================== */
+    case 'publications':
         $admin->publicationList();
         break;
 
-    case "publication-add":
+    case 'publication-add':
         $admin->publicationAdd();
         break;
 
-    case "publication-edit":
-        needId();
+    case 'publication-edit':
         $admin->publicationEdit();
         break;
 
-    case "publication-delete":
-        needId();
+    case 'publication-delete':
         $admin->publicationDelete();
         break;
 
+    /* ======================================================
+       REPORTS
+    ====================================================== */
+    case 'reports':
+        $admin->reportList();
+        break;
+
+    case 'report-status':
+        $admin->updateReportStatus();
+        break;
+
+    /* ======================================================
+       DEFAULT → DASHBOARD
+    ====================================================== */
     default:
-        echo "<h1 style='color:red;text-align:center;margin-top:40px;'>❌ Unknown action: $action</h1>";
+        $admin->dashboard();
+        break;
 }
+
