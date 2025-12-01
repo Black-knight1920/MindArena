@@ -31,6 +31,30 @@ $totalOrganisation = 0;
 foreach ($dons as $don) {
     $totalOrganisation += $don['montant'];
 }
+
+// NOUVEAU : Définir les objectifs comme dans index.php du frontoffice
+$objectifsParOrganisation = [
+    1 => 10000, // ID 1 : 10 000€
+    2 => 5000,  // ID 2 : 5 000€
+    3 => 15000, // ID 3 : 15 000€
+    4 => 3000,  // ID 4 : 3 000€
+    5 => 8000,  // ID 5 : 8 000€
+    6 => 12000, // ID 6 : 12 000€
+    7 => 6000,  // ID 7 : 6 000€
+    8 => 20000, // ID 8 : 20 000€
+    9 => 4000,  // ID 9 : 4 000€
+    10 => 7000  // ID 10 : 7 000€
+];
+
+// Utiliser l'objectif spécifique à l'organisation ou un défaut
+$objectif = $objectifsParOrganisation[$organisationId] ?? 5000; // 5000€ par défaut si non défini
+$pourcentage = $objectif > 0 ? min(100, ($totalOrganisation / $objectif) * 100) : 0;
+$montantRestant = max(0, $objectif - $totalOrganisation);
+
+// NOUVEAU : Chemin de l'image de l'organisation
+$imagePath = "../frontoffice/images/organisations/organisation_" . $organisationId . ".jpg";
+$defaultImagePath = "../frontoffice/images/organisations/default_org.jpg";
+$imageExists = file_exists($imagePath);
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -71,6 +95,7 @@ foreach ($dons as $don) {
             --success: #10b981;
             --danger: #ef4444;
             --warning: #f59e0b;
+            --info: #3b82f6;
         }
 
         body.light {
@@ -100,10 +125,11 @@ foreach ($dons as $don) {
         /* ================= GLOBAL ================= */
         * {
             box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         body {
-            margin: 0;
             min-height: 100vh;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
             background: radial-gradient(circle at top left, rgba(139,92,246,0.16), transparent 55%),
@@ -330,6 +356,7 @@ foreach ($dons as $don) {
             background: rgba(15,23,42,0.75);
             position: relative;
             cursor: pointer;
+            border: none;
         }
 
         body.light .theme-toggle {
@@ -401,56 +428,228 @@ foreach ($dons as $don) {
         /* ================= STYLES SPÉCIFIQUES ================= */
         .org-header {
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 24px;
-            padding-bottom: 16px;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
             border-bottom: 1px solid var(--border-subtle);
         }
 
+        .org-main-info {
+            display: flex;
+            gap: 25px;
+            align-items: flex-start;
+        }
+
+        @media (max-width: 768px) {
+            .org-main-info {
+                flex-direction: column;
+            }
+        }
+
+        .org-image-container {
+            flex-shrink: 0;
+            width: 250px;
+            height: 180px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .org-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .org-image-placeholder {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #8b5cf6, #ec4899);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .org-details {
+            flex: 1;
+        }
+
         .org-title {
-            font-size: 1.8rem;
+            font-size: 2.2rem;
             font-weight: 800;
             background: linear-gradient(135deg, var(--primary), #a855f7);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
 
         .org-subtitle {
             color: var(--text-muted);
-            max-width: 600px;
-            line-height: 1.5;
+            line-height: 1.6;
+            margin-bottom: 15px;
         }
 
+        .website-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary);
+            font-weight: 600;
+            transition: color 0.2s ease;
+        }
+
+        .website-link:hover {
+            color: var(--primary-hover);
+        }
+
+        /* NOUVEAU : Section de progression améliorée avec mêmes objectifs */
+        .progress-section {
+            background: rgba(139, 92, 246, 0.1);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .progress-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .progress-percentage {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #10b981, #4cff4c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4cff4c, #10b981);
+            border-radius: 8px;
+            transition: width 1s ease-out;
+        }
+
+        .progress-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95rem;
+            margin-top: 20px;
+        }
+
+        .progress-current {
+            color: #4cff4c;
+            font-weight: bold;
+            font-size: 1.3rem;
+        }
+
+        .progress-goal {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .progress-remaining {
+            color: var(--warning);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        /* Niveau de progression identique au frontoffice */
+        .progress-level {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.1);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            color: var(--success);
+            font-weight: 600;
+            margin-top: 15px;
+        }
+
+        .progress-level i {
+            font-size: 1.1rem;
+        }
+
+        /* Statistiques */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
+            gap: 20px;
+            margin-bottom: 30px;
         }
 
         .stat-card {
             background: var(--card-bg);
             border-radius: 12px;
             border: 1px solid var(--card-border);
-            padding: 16px;
+            padding: 20px;
             text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), #a855f7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            margin: 0 auto 15px;
         }
 
         .stat-value {
             font-size: 1.8rem;
             font-weight: 700;
             color: var(--primary);
-            margin-bottom: 4px;
+            margin-bottom: 5px;
         }
 
         .stat-label {
             font-size: 0.875rem;
             color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
+        /* Tableau des dons */
         .modern-table {
             width: 100%;
             border-collapse: collapse;
@@ -458,23 +657,25 @@ foreach ($dons as $don) {
             border-radius: 12px;
             overflow: hidden;
             box-shadow: var(--shadow-soft);
+            margin-top: 20px;
         }
 
         .modern-table th {
             background: linear-gradient(135deg, var(--primary), #a855f7);
             color: white;
-            padding: 16px 12px;
+            padding: 18px 16px;
             text-align: left;
             font-weight: 600;
-            font-size: 0.875rem;
+            font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
         .modern-table td {
-            padding: 14px 12px;
+            padding: 16px;
             border-bottom: 1px solid var(--border-subtle);
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+            vertical-align: middle;
         }
 
         .modern-table tr:last-child td {
@@ -487,10 +688,12 @@ foreach ($dons as $don) {
 
         /* Badge styles */
         .badge {
-            padding: 4px 8px;
-            border-radius: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
             font-size: 0.75rem;
             font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .badge-success {
@@ -507,9 +710,9 @@ foreach ($dons as $don) {
 
         /* Button styles */
         .btn {
-            padding: 8px 16px;
+            padding: 10px 18px;
             border-radius: 8px;
-            font-size: 0.875rem;
+            font-size: 0.9rem;
             font-weight: 600;
             border: none;
             cursor: pointer;
@@ -517,7 +720,7 @@ foreach ($dons as $don) {
             text-decoration: none;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
 
         .btn-danger {
@@ -529,7 +732,7 @@ foreach ($dons as $don) {
         .btn-danger:hover {
             background: var(--danger);
             color: white;
-            transform: translateY(-1px);
+            transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
         }
 
@@ -545,30 +748,35 @@ foreach ($dons as $don) {
             color: var(--primary);
         }
 
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: 1px solid var(--primary);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
         /* Amount styling */
         .amount {
             font-weight: 700;
             color: var(--success);
+            font-size: 1.1rem;
         }
 
         .donor-name {
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .anonymous {
             color: var(--text-muted);
             font-style: italic;
-        }
-
-        /* Website link */
-        .website-link {
-            color: var(--primary);
-            font-weight: 600;
-            transition: color 0.2s ease;
-        }
-
-        .website-link:hover {
-            color: var(--primary-hover);
         }
 
         /* Empty state */
@@ -579,8 +787,8 @@ foreach ($dons as $don) {
         }
 
         .empty-state i {
-            font-size: 3rem;
-            margin-bottom: 16px;
+            font-size: 3.5rem;
+            margin-bottom: 20px;
             opacity: 0.5;
         }
 
@@ -592,6 +800,20 @@ foreach ($dons as $don) {
         .total-row td {
             border-top: 2px solid var(--primary);
             border-bottom: none !important;
+            padding: 20px 16px;
+        }
+
+        .total-amount {
+            font-size: 1.3rem;
+            color: var(--success);
+        }
+
+        /* Actions rapides */
+        .quick-actions {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
         }
 
         /* Simple utilities */
@@ -601,6 +823,8 @@ foreach ($dons as $don) {
         }
 
         .me-1 { margin-right: 0.25rem; }
+        .me-2 { margin-right: 0.5rem; }
+        .mb-3 { margin-bottom: 1rem; }
 
         @media (max-width: 960px) {
             .admin-sidebar {
@@ -618,6 +842,23 @@ foreach ($dons as $don) {
             .modern-table {
                 display: block;
                 overflow-x: auto;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .quick-actions {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            .progress-stats {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
             }
         }
     </style>
@@ -699,65 +940,193 @@ foreach ($dons as $don) {
             <div class="admin-content">
                 <div class="content-inner">
                     <div class="card-shell">
-                        <!-- En-tête de l'organisation -->
+                        <!-- NOUVEAU : En-tête avec image et informations -->
                         <div class="org-header">
-                            <div>
-                                <h1 class="org-title"><?= htmlspecialchars($organisation['nom']) ?></h1>
-                                <p class="org-subtitle"><?= htmlspecialchars($organisation['description']) ?></p>
-                                <?php if (!empty($organisation['website_url'])): ?>
-                                    <p class="org-subtitle">
-                                        <i class="bi bi-globe me-1"></i>
-                                        <a href="<?= htmlspecialchars($organisation['website_url']) ?>" target="_blank" class="website-link">
-                                            <?= htmlspecialchars($organisation['website_url']) ?>
+                            <div class="org-main-info">
+                                <!-- Image de l'organisation -->
+                                <div class="org-image-container">
+                                    <?php if ($imageExists): ?>
+                                        <img src="<?= $imagePath ?>" 
+                                             alt="<?= htmlspecialchars($organisation['nom']) ?>" 
+                                             class="org-image">
+                                    <?php else: ?>
+                                        <div class="org-image-placeholder">
+                                            <?= strtoupper(substr($organisation['nom'], 0, 2)) ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                                
+                                <div class="org-details">
+                                    <h1 class="org-title"><?= htmlspecialchars($organisation['nom']) ?></h1>
+                                    <p class="org-subtitle"><?= htmlspecialchars($organisation['description']) ?></p>
+                                    
+                                    <?php if (!empty($organisation['website_url'])): ?>
+                                        <div class="mb-3">
+                                            <a href="<?= htmlspecialchars($organisation['website_url']) ?>" 
+                                               target="_blank" 
+                                               class="website-link">
+                                                <i class="bi bi-globe"></i>
+                                                <?= htmlspecialchars($organisation['website_url']) ?>
+                                            </a>
+                                        </div>
+                                    <?php endif; ?>
+                                    
+                                    <!-- Actions rapides -->
+                                    <div class="quick-actions">
+                                        <a href="../frontoffice/addDon.php?orgId=<?= $organisation['id'] ?>" 
+                                           target="_blank" 
+                                           class="btn btn-primary">
+                                            <i class="bi bi-plus-circle"></i>
+                                            Nouveau don
                                         </a>
-                                    </p>
-                                <?php endif; ?>
+                                        <a href="../frontoffice/index.php#organisations" 
+                                           target="_blank" 
+                                           class="btn btn-outline">
+                                            <i class="bi bi-eye"></i>
+                                            Voir sur le site
+                                        </a>
+                                        <a href="modifyOrganisation.php?id=<?= $organisation['id'] ?>" 
+                                           class="btn btn-outline">
+                                            <i class="bi bi-pencil"></i>
+                                            Modifier
+                                        </a>
+                                    </div>
+                                </div>
                             </div>
-                            <div style="text-align: right;">
-                                <div class="stat-value"><?= number_format($totalOrganisation, 2) ?> €</div>
-                                <div class="stat-label">Total collecté</div>
+                            
+                            <!-- NOUVEAU : Section de progression avec mêmes objectifs que le frontoffice -->
+                            <div class="progress-section">
+                                <div class="progress-header">
+                                    <div class="progress-title">
+                                        <i class="bi bi-bullseye"></i>
+                                        Objectif de collecte
+                                    </div>
+                                    <div class="progress-percentage"><?= number_format($pourcentage, 1) ?>%</div>
+                                </div>
+                                
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar-fill" style="width: <?= $pourcentage ?>%"></div>
+                                </div>
+                                
+                                <div class="progress-stats">
+                                    <div>
+                                        <div style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 5px;">
+                                            Collecté
+                                        </div>
+                                        <div class="progress-current"><?= number_format($totalOrganisation, 2) ?> €</div>
+                                    </div>
+                                    
+                                    <div style="text-align: center;">
+                                        <div style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 5px;">
+                                            Restant
+                                        </div>
+                                        <div class="progress-remaining">
+                                            <?= number_format($montantRestant, 2) ?> €
+                                        </div>
+                                    </div>
+                                    
+                                    <div style="text-align: right;">
+                                        <div style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 5px;">
+                                            Objectif
+                                        </div>
+                                        <div class="progress-goal"><?= number_format($objectif, 2) ?> €</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Niveau de progression identique au frontoffice -->
+                                <div style="margin-top: 15px; text-align: center;">
+                                    <span class="progress-level">
+                                        <?php if ($pourcentage >= 100): ?>
+                                            <i class="bi bi-trophy-fill" style="color: gold;"></i>
+                                            Objectif atteint !
+                                        <?php elseif ($pourcentage >= 75): ?>
+                                            <i class="bi bi-star-fill" style="color: gold;"></i>
+                                            Niveau Expert
+                                        <?php elseif ($pourcentage >= 50): ?>
+                                            <i class="bi bi-star-half" style="color: gold;"></i>
+                                            Niveau Avancé
+                                        <?php elseif ($pourcentage >= 25): ?>
+                                            <i class="bi bi-arrow-up-right" style="color: var(--warning);"></i>
+                                            Niveau Intermédiaire
+                                        <?php else: ?>
+                                            <i class="bi bi-arrow-clockwise" style="color: var(--text-muted);"></i>
+                                            Niveau Débutant
+                                        <?php endif; ?>
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Statistiques -->
+                        <!-- Statistiques détaillées -->
                         <div class="stats-grid">
                             <div class="stat-card">
-                                <div class="stat-value"><?= count($dons) ?></div>
-                                <div class="stat-label">Nombre de dons</div>
-                            </div>
-                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="bi bi-cash-coin"></i>
+                                </div>
                                 <div class="stat-value"><?= number_format($totalOrganisation, 2) ?> €</div>
                                 <div class="stat-label">Total collecté</div>
                             </div>
+                            
                             <div class="stat-card">
-                                <div class="stat-value"><?= count($dons) > 0 ? number_format($totalOrganisation / count($dons), 2) : '0.00' ?> €</div>
+                                <div class="stat-icon">
+                                    <i class="bi bi-receipt"></i>
+                                </div>
+                                <div class="stat-value"><?= count($dons) ?></div>
+                                <div class="stat-label">Nombre de dons</div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="bi bi-graph-up"></i>
+                                </div>
+                                <div class="stat-value">
+                                    <?= count($dons) > 0 ? number_format($totalOrganisation / count($dons), 2) : '0.00' ?> €
+                                </div>
                                 <div class="stat-label">Moyenne par don</div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="bi bi-percent"></i>
+                                </div>
+                                <div class="stat-value"><?= number_format($pourcentage, 1) ?>%</div>
+                                <div class="stat-label">Progression</div>
                             </div>
                         </div>
 
                         <!-- Tableau des dons -->
+                        <h3 style="color: var(--text); margin: 30px 0 20px 0; font-size: 1.5rem; font-weight: 700;">
+                            <i class="bi bi-list-check me-2"></i>Historique des dons
+                        </h3>
+                        
                         <div class="table-container">
-                            <table class="modern-table">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Donateur</th>
-                                        <th>Montant</th>
-                                        <th>Date</th>
-                                        <th>Type</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php if (empty($dons)): ?>
+                            <?php if (empty($dons)): ?>
+                                <div class="empty-state">
+                                    <i class="bi bi-inbox"></i>
+                                    <div>Aucun don trouvé pour cette organisation</div>
+                                    <p class="text-muted mt-2">
+                                        Les dons apparaîtront ici lorsqu'ils seront enregistrés.
+                                        <br>
+                                        <a href="../frontoffice/addDon.php?orgId=<?= $organisation['id'] ?>" 
+                                           target="_blank" 
+                                           class="btn btn-primary mt-3">
+                                            <i class="bi bi-plus-circle"></i> Faire le premier don
+                                        </a>
+                                    </p>
+                                </div>
+                            <?php else: ?>
+                                <table class="modern-table">
+                                    <thead>
                                         <tr>
-                                            <td colspan="6" class="empty-state">
-                                                <i class="bi bi-inbox"></i>
-                                                <div>Aucun don trouvé pour cette organisation</div>
-                                                <p class="text-muted mt-2">Les dons apparaîtront ici lorsqu'ils seront enregistrés.</p>
-                                            </td>
+                                            <th width="80">ID</th>
+                                            <th>Donateur</th>
+                                            <th width="150">Montant</th>
+                                            <th width="120">Date</th>
+                                            <th width="120">Type</th>
+                                            <th width="150">Actions</th>
                                         </tr>
-                                    <?php else: ?>
+                                    </thead>
+                                    <tbody>
                                         <?php foreach ($dons as $don): 
                                             $nomComplet = '';
                                             if (!empty($don['prenom_donateur']) || !empty($don['nom_donateur'])) {
@@ -783,7 +1152,8 @@ foreach ($dons as $don) {
                                                 <?php endif; ?>
                                             </td>
                                             <td>
-                                                <a href="../don/deleteDon.php?id=<?= $don['id'] ?>" class="btn btn-danger" 
+                                                <a href="../don/deleteDon.php?id=<?= $don['id'] ?>" 
+                                                   class="btn btn-danger" 
                                                    onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce don ? Cette action est irréversible.')">
                                                    <i class="bi bi-trash"></i>Supprimer
                                                 </a>
@@ -793,13 +1163,20 @@ foreach ($dons as $don) {
                                         
                                         <!-- Ligne du total -->
                                         <tr class="total-row">
-                                            <td colspan="2"><strong>Total <?= htmlspecialchars($organisation['nom']) ?></strong></td>
-                                            <td class="amount"><?= number_format($totalOrganisation, 2) ?> €</td>
+                                            <td colspan="2">
+                                                <strong>Total pour <?= htmlspecialchars($organisation['nom']) ?></strong>
+                                            </td>
+                                            <td class="total-amount"><?= number_format($totalOrganisation, 2) ?> €</td>
                                             <td colspan="3"></td>
                                         </tr>
-                                    <?php endif; ?>
-                                </tbody>
-                            </table>
+                                    </tbody>
+                                </table>
+                                
+                                <div style="text-align: center; margin-top: 20px; color: var(--text-muted); font-size: 0.9rem;">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    <?= count($dons) ?> don(s) au total pour cette organisation
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -836,6 +1213,20 @@ foreach ($dons as $don) {
                 });
             }
         })();
+
+        // Animation de la barre de progression
+        document.addEventListener('DOMContentLoaded', function() {
+            const progressBar = document.querySelector('.progress-bar-fill');
+            if (progressBar) {
+                const currentWidth = progressBar.style.width;
+                progressBar.style.width = '0';
+                
+                setTimeout(() => {
+                    progressBar.style.transition = 'width 1.5s cubic-bezier(0.4, 0, 0.2, 1)';
+                    progressBar.style.width = currentWidth;
+                }, 300);
+            }
+        });
     </script>
 </body>
 </html>

@@ -11,14 +11,15 @@ class OrganisationController {
             return false;
         }
 
-        $sql = "INSERT INTO organisation (nom, description, website_url) 
-                VALUES (:nom, :description, :website_url)";
+        $sql = "INSERT INTO organisation (nom, description, website_url, image_url) 
+                VALUES (:nom, :description, :website_url, :image_url)";
         $db = config::getConnexion();
         $q = $db->prepare($sql);
         $result = $q->execute([
             ':nom' => $org->getNom(),
             ':description' => $org->getDescription(),
-            ':website_url' => $org->getWebsiteUrl()
+            ':website_url' => $org->getWebsiteUrl(),
+            ':image_url' => $org->getImageUrl()
         ]);
         
         if (!$result) {
@@ -56,7 +57,7 @@ class OrganisationController {
         }
         
         $sql = "UPDATE organisation SET 
-                nom = :nom, description = :description, website_url = :website_url
+                nom = :nom, description = :description, website_url = :website_url, image_url = :image_url
                 WHERE id = :id";
         $db = config::getConnexion();
         $q = $db->prepare($sql);
@@ -64,7 +65,8 @@ class OrganisationController {
             ':id' => $id,
             ':nom' => $org->getNom(),
             ':description' => $org->getDescription(),
-            ':website_url' => $org->getWebsiteUrl()
+            ':website_url' => $org->getWebsiteUrl(),
+            ':image_url' => $org->getImageUrl()
         ]);
     }
 
@@ -75,7 +77,6 @@ class OrganisationController {
         return $q->execute([':id' => $id]);
     }
 
-    //Récupère le montant total d'une organisation spécifique
     public function getMontantOrganisation(int $organisationId) {
         $sql = "SELECT COALESCE(SUM(montant), 0) as total FROM don WHERE organisationId = :organisationId";
         $db = config::getConnexion();
@@ -85,7 +86,6 @@ class OrganisationController {
         return $result ? (float)$result['total'] : 0.0;
     }
 
-    //Validation des données de l'organisation
     public function validateOrganisation(Organisation $org) {
         $errors = [];
         
@@ -119,7 +119,60 @@ class OrganisationController {
             }
         }
         
+        // Validation de l'image URL (optionnelle) - MODIFIÉ POUR ACCEPTER LES CHEMINS LOCAUX
+        $imageUrl = trim($org->getImageUrl() ?? '');
+        if (!empty($imageUrl)) {
+            // Si c'est une URL complète (http://... ou https://...)
+            if (filter_var($imageUrl, FILTER_VALIDATE_URL)) {
+                // C'est une URL valide, vérifier la longueur
+                if (strlen($imageUrl) > 255) {
+                    $errors[] = "L'URL de l'image ne peut pas dépasser 255 caractères";
+                }
+            } 
+            // Sinon, vérifier si c'est un chemin local (commence par /)
+            elseif (strpos($imageUrl, '/') === 0) {
+                // C'est un chemin local, vérifier la longueur
+                if (strlen($imageUrl) > 255) {
+                    $errors[] = "Le chemin de l'image ne peut pas dépasser 255 caractères";
+                }
+                // Optionnel : vérifier l'extension
+                $extension = pathinfo($imageUrl, PATHINFO_EXTENSION);
+                $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+                if (!empty($extension) && !in_array(strtolower($extension), $allowedExtensions)) {
+                    $errors[] = "L'extension du fichier image n'est pas autorisée (formats: jpg, jpeg, png, gif, webp, svg)";
+                }
+            } else {
+                // Ni URL valide, ni chemin local
+                $errors[] = "Le chemin de l'image n'est pas valide. Doit être une URL complète (http://...) ou un chemin local commençant par /";
+            }
+        }
+        
         return $errors;
+    }
+    
+    // Méthode pour valider spécifiquement un chemin d'image
+    public function isValidImagePath($path): bool {
+        if (empty($path)) {
+            return true;
+        }
+        
+        // Si c'est une URL complète
+        if (filter_var($path, FILTER_VALIDATE_URL)) {
+            return true;
+        }
+        
+        // Si c'est un chemin local (commence par /)
+        if (strpos($path, '/') === 0) {
+            // Vérifier l'extension si présente
+            $extension = pathinfo($path, PATHINFO_EXTENSION);
+            if (empty($extension)) {
+                return true; // Pas d'extension, on accepte
+            }
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+            return in_array(strtolower($extension), $allowedExtensions);
+        }
+        
+        return false;
     }
 }
 ?>

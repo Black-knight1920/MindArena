@@ -1,20 +1,16 @@
 <?php
 require_once __DIR__."/../../../Controller/OrganisationController.php";
 require_once __DIR__."/../../../Controller/DonController.php";
-
 $orgCtrl = new OrganisationController();
 $donCtrl = new DonController();
-
 $organisations = $orgCtrl->listOrganisations();
 $totalGeneral = 0;
 foreach ($organisations as $org) {
     $totalGeneral += $org['montant_total'] ?? 0;
 }
-
 // Récupérer tous les dons pour compter par organisation
 $tousLesDons = $donCtrl->listDon();
 $donsParOrganisation = [];
-
 // Organiser les dons par organisation
 foreach ($tousLesDons as $don) {
     $orgId = $don['organisationId'];
@@ -29,10 +25,10 @@ foreach ($tousLesDons as $don) {
 <head>
     <meta charset="UTF-8">
     <title>Organisations - Mind Arena</title>
-    
+   
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    
+   
     <style>
         /* ================= THEME VARIABLES ================= */
         :root {
@@ -42,28 +38,21 @@ foreach ($tousLesDons as $don) {
             --sidebar-border: rgba(255,255,255,0.05);
             --sidebar-text: #e5e7eb;
             --sidebar-muted: #9ca3af;
-
             --header-bg: rgba(15,16,24,0.96);
-
             --card-bg: #181927;
             --card-border: rgba(148,163,184,0.25);
-
             --primary: #8b5cf6;
             --primary-soft: rgba(139,92,246,0.13);
             --primary-hover: #a855f7;
-
             --text: #f9fafb;
             --text-muted: #9ca3af;
             --border-subtle: rgba(148,163,184,0.25);
-
             --shadow-soft: 0 18px 45px rgba(15,23,42,0.55);
-
             --success: #10b981;
             --danger: #ef4444;
             --warning: #f59e0b;
             --info: #3b82f6;
         }
-
         body.light {
             --bg: #f4f5fb;
             --bg-soft: #ffffff;
@@ -71,35 +60,23 @@ foreach ($tousLesDons as $don) {
             --sidebar-border: rgba(15,23,42,0.06);
             --sidebar-text: #111827;
             --sidebar-muted: #6b7280;
-
             --header-bg: rgba(255,255,255,0.96);
-
             --card-bg: #ffffff;
             --card-border: rgba(15,23,42,0.07);
-
             --primary: #7c3aed;
             --primary-soft: rgba(124,58,237,0.09);
             --primary-hover: #6d28d9;
-
             --text: #111827;
             --text-muted: #6b7280;
             --border-subtle: rgba(148,163,184,0.35);
-
             --shadow-soft: 0 18px 40px rgba(15,23,42,0.12);
-
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --info: #3b82f6;
         }
-
         /* ================= GLOBAL ================= */
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
-
         body {
             min-height: 100vh;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
@@ -109,19 +86,9 @@ foreach ($tousLesDons as $don) {
             color: var(--text);
             transition: background .25s ease, color .25s ease;
         }
-
-        a {
-            text-decoration: none;
-            color: inherit;
-        }
-
+        a { text-decoration: none; color: inherit; }
         /* ================= LAYOUT ================= */
-        .admin-shell {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        /* ---------- SIMPLE SIDEBAR ---------- */
+        .admin-shell { display: flex; min-height: 100vh; }
         .admin-sidebar {
             width: 230px;
             background: var(--sidebar-bg);
@@ -131,7 +98,6 @@ foreach ($tousLesDons as $don) {
             padding: 18px 16px 18px;
             transition: background-color 0.3s ease, border-color 0.3s ease;
         }
-
         .sidebar-brand {
             display: flex;
             align-items: center;
@@ -140,7 +106,6 @@ foreach ($tousLesDons as $don) {
             border-bottom: 1px solid var(--sidebar-border);
             margin-bottom: 16px;
         }
-
         .sidebar-logo {
             width: 32px;
             height: 32px;
@@ -153,11 +118,7 @@ foreach ($tousLesDons as $don) {
             font-size: 18px;
             box-shadow: 0 10px 25px rgba(79,70,229,0.6);
         }
-
-        .sidebar-title {
-            display: flex;
-            flex-direction: column;
-        }
+        .sidebar-title { display: flex; flex-direction: column; }
         .sidebar-title span:first-child {
             font-size: 14px;
             font-weight: 700;
@@ -169,13 +130,7 @@ foreach ($tousLesDons as $don) {
             letter-spacing: .18em;
             color: var(--sidebar-muted);
         }
-
-        .sidebar-nav {
-            margin-top: 10px;
-            list-style: none;
-            padding: 0;
-        }
-
+        .sidebar-nav { margin-top: 10px; list-style: none; padding: 0; }
         .sidebar-nav-label {
             font-size: 11px;
             text-transform: uppercase;
@@ -183,7 +138,6 @@ foreach ($tousLesDons as $don) {
             letter-spacing: .12em;
             margin: 10px 6px 6px;
         }
-
         .sidebar-link {
             display: flex;
             align-items: center;
@@ -194,23 +148,17 @@ foreach ($tousLesDons as $don) {
             color: var(--sidebar-text);
             transition: background .18s ease, color .18s ease, transform .12s ease;
         }
-
-        .sidebar-link i {
-            font-size: 17px;
-        }
-
+        .sidebar-link i { font-size: 17px; }
         .sidebar-link:hover {
             background: var(--primary-soft);
             color: var(--primary);
             transform: translateX(2px);
         }
-
         .sidebar-link.active {
             background: var(--primary);
             color: #fff;
             box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 12px 25px rgba(88,28,135,0.6);
         }
-
         .sidebar-footer {
             margin-top: auto;
             padding-top: 14px;
@@ -218,7 +166,6 @@ foreach ($tousLesDons as $don) {
             font-size: 12px;
             color: var(--sidebar-muted);
         }
-
         .sidebar-footer a {
             display: inline-flex;
             align-items: center;
@@ -229,21 +176,12 @@ foreach ($tousLesDons as $don) {
             border-radius: 999px;
             transition: background .18s ease, color .18s ease;
         }
-
         .sidebar-footer a:hover {
             background: var(--primary-soft);
             color: var(--primary);
         }
-
         /* ---------- MAIN AREA ---------- */
-        .admin-main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-        }
-
-        /* TOP BAR */
+        .admin-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
         .admin-header {
             position: sticky;
             top: 0;
@@ -258,23 +196,9 @@ foreach ($tousLesDons as $don) {
             padding: 0 22px;
             transition: background-color 0.3s ease, border-color 0.3s ease;
         }
-
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 14px;
-        }
-
-        .header-left-title {
-            font-weight: 600;
-        }
-
-        .header-left-sub {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-
+        .header-left { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+        .header-left-title { font-weight: 600; }
+        .header-left-sub { font-size: 12px; color: var(--text-muted); }
         .header-search {
             flex: 0 0 280px;
             display: flex;
@@ -286,12 +210,10 @@ foreach ($tousLesDons as $don) {
             border: 1px solid rgba(148,163,184,0.35);
             transition: background-color 0.3s ease, border-color 0.3s ease;
         }
-
         body.light .header-search {
             background: rgba(255,255,255,0.7);
             border-color: rgba(148,163,184,0.5);
         }
-
         .header-search input {
             flex: 1;
             border: none;
@@ -300,19 +222,8 @@ foreach ($tousLesDons as $don) {
             background: transparent;
             color: var(--text);
         }
-
-        .header-search i {
-            font-size: 16px;
-            color: var(--text-muted);
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        /* Toggle mode */
+        .header-search i { font-size: 16px; color: var(--text-muted); }
+        .header-right { display: flex; align-items: center; gap: 16px; }
         .theme-toggle-wrap {
             display: flex;
             align-items: center;
@@ -322,7 +233,6 @@ foreach ($tousLesDons as $don) {
             letter-spacing: .12em;
             color: var(--text-muted);
         }
-
         .theme-toggle {
             width: 46px;
             height: 22px;
@@ -332,11 +242,9 @@ foreach ($tousLesDons as $don) {
             cursor: pointer;
             border: none;
         }
-
         body.light .theme-toggle {
             background: rgba(148,163,184,0.6);
         }
-
         .theme-toggle-thumb {
             width: 18px;
             height: 18px;
@@ -353,18 +261,10 @@ foreach ($tousLesDons as $don) {
             font-size: 12px;
             color: #0f172a;
         }
-
         body.light .theme-toggle-thumb {
             transform: translateX(22px);
         }
-
-        .header-user {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 13px;
-        }
-
+        .header-user { display: flex; align-items: center; gap: 10px; font-size: 13px; }
         .user-avatar {
             width: 30px;
             height: 30px;
@@ -377,8 +277,6 @@ foreach ($tousLesDons as $don) {
             font-size: 16px;
             box-shadow: 0 10px 20px rgba(88,28,135,0.7);
         }
-
-        /* CONTENT WRAP */
         .admin-content {
             flex: 1;
             padding: 24px 24px 26px;
@@ -386,12 +284,7 @@ foreach ($tousLesDons as $don) {
             background: var(--bg-soft);
             transition: background-color 0.3s ease;
         }
-
-        .content-inner {
-            max-width: 1320px;
-            margin: 0 auto;
-        }
-
+        .content-inner { max-width: 1320px; margin: 0 auto; }
         .card-shell {
             background: var(--card-bg);
             border-radius: 18px;
@@ -401,18 +294,87 @@ foreach ($tousLesDons as $don) {
             transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
-        /* ================= TABLE STYLES ================= */
-        .table-container {
-            margin-top: 20px;
+        /* ================= FILTER BAR ================= */
+        .filter-bar {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            margin-bottom: 22px;
+            flex-wrap: wrap;
+        }
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 250px;
+        }
+        .filter-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .filter-label i { font-size: 1rem; }
+        .filter-select {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-subtle);
+            background: var(--card-bg);
+            color: var(--text);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: border-color .2s ease, background .2s ease;
+        }
+        .filter-select:hover { border-color: var(--primary); }
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+        .filter-clear-btn {
+            padding: 8px 14px;
+            border: none;
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .filter-clear-btn:hover {
+            background: #ef4444;
+            color: white;
+            transform: translateY(-1px);
+        }
+        .search-counter {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
+        /* ================= TABLE STYLES ================= */
+        .table-container { margin-top: 20px; }
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 16px;
             margin-bottom: 24px;
         }
-
         .stat-card {
             background: var(--card-bg);
             border-radius: 12px;
@@ -421,19 +383,13 @@ foreach ($tousLesDons as $don) {
             text-align: center;
             transition: background-color 0.3s ease, border-color 0.3s ease;
         }
-
         .stat-value {
             font-size: 1.8rem;
             font-weight: 700;
             color: var(--primary);
             margin-bottom: 4px;
         }
-
-        .stat-label {
-            font-size: 0.875rem;
-            color: var(--text-muted);
-        }
-
+        .stat-label { font-size: 0.875rem; color: var(--text-muted); }
         .modern-table {
             width: 100%;
             border-collapse: collapse;
@@ -443,7 +399,6 @@ foreach ($tousLesDons as $don) {
             box-shadow: var(--shadow-soft);
             transition: background-color 0.3s ease, box-shadow 0.3s ease;
         }
-
         .modern-table th {
             background: linear-gradient(135deg, var(--primary), #a855f7);
             color: white;
@@ -453,50 +408,44 @@ foreach ($tousLesDons as $don) {
             font-size: 0.875rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            cursor: pointer;
+            user-select: none;
+            transition: background .2s ease;
         }
-
+        .modern-table th:hover {
+            background: linear-gradient(135deg, #7c3aed, #9333ea);
+        }
+        .modern-table th .sort-icon {
+            margin-left: 6px;
+            font-size: 0.75rem;
+            opacity: 0.6;
+            transition: opacity .2s ease;
+        }
+        .modern-table th.sortable:hover .sort-icon { opacity: 1; }
         .modern-table td {
             padding: 14px 12px;
             border-bottom: 1px solid var(--border-subtle);
             font-size: 0.9rem;
             transition: border-color 0.3s ease;
         }
-
-        .modern-table tr:last-child td {
-            border-bottom: none;
-        }
-
-        .modern-table tr:hover {
-            background: var(--primary-soft);
-        }
-
-        /* Badge styles */
+        .modern-table tr:last-child td { border-bottom: none; }
+        .modern-table tbody tr:hover { background: var(--primary-soft); }
         .badge {
             padding: 4px 8px;
             border-radius: 6px;
             font-size: 0.75rem;
             font-weight: 600;
         }
-
         .badge-success {
             background: rgba(16, 185, 129, 0.2);
             color: var(--success);
             border: 1px solid rgba(16, 185, 129, 0.3);
         }
-
-        .badge-primary {
-            background: rgba(139, 92, 246, 0.2);
-            color: var(--primary);
-            border: 1px solid rgba(139, 92, 246, 0.3);
-        }
-
         .badge-info {
             background: rgba(59, 130, 246, 0.2);
             color: var(--info);
             border: 1px solid rgba(59, 130, 246, 0.3);
         }
-
-        /* Button styles */
         .btn {
             padding: 8px 16px;
             border-radius: 8px;
@@ -510,178 +459,119 @@ foreach ($tousLesDons as $don) {
             align-items: center;
             gap: 6px;
         }
-
         .btn-success {
             background: rgba(16, 185, 129, 0.2);
             color: var(--success);
             border: 1px solid rgba(16, 185, 129, 0.3);
         }
-
         .btn-success:hover {
             background: var(--success);
             color: white;
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
-
         .btn-danger {
             background: rgba(239, 68, 68, 0.2);
             color: var(--danger);
             border: 1px solid rgba(239, 68, 68, 0.3);
         }
-
         .btn-danger:hover {
             background: var(--danger);
             color: white;
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
         }
-
         .btn-primary {
             background: var(--primary);
             color: white;
             border: 1px solid var(--primary);
         }
-
         .btn-primary:hover {
             background: var(--primary-hover);
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
         }
-
         .btn-info {
             background: rgba(59, 130, 246, 0.2);
             color: var(--info);
             border: 1px solid rgba(59, 130, 246, 0.3);
         }
-
         .btn-info:hover {
             background: var(--info);
             color: white;
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
         }
-
-        .btn-outline {
-            background: transparent;
-            color: var(--text-muted);
-            border: 1px solid var(--border-subtle);
-        }
-
-        .btn-outline:hover {
-            background: var(--primary-soft);
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-
-        /* Progress bar */
         .progress {
             height: 6px;
             background: var(--border-subtle);
             border-radius: 3px;
             overflow: hidden;
         }
-
         .progress-bar {
             height: 100%;
             background: linear-gradient(135deg, var(--success), #34d399);
             border-radius: 3px;
         }
-
-        /* Amount styling */
         .amount {
             font-weight: 700;
             color: var(--success);
         }
-
-        .amount-zero {
-            color: var(--text-muted);
-        }
-
-        /* Description cell */
+        .amount-zero { color: var(--text-muted); }
         .description-cell {
             max-width: 300px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
-
-        /* Website link */
         .website-link {
             color: var(--primary);
             font-weight: 600;
             transition: color 0.2s ease;
         }
-
-        .website-link:hover {
-            color: var(--primary-hover);
-        }
-
-        /* Empty state */
+        .website-link:hover { color: var(--primary-hover); }
         .empty-state {
             text-align: center;
             padding: 60px 20px;
             color: var(--text-muted);
         }
-
         .empty-state i {
             font-size: 3rem;
             margin-bottom: 16px;
             opacity: 0.5;
         }
-
-        /* Action buttons */
         .action-buttons {
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
         }
-
-        /* Simple utilities */
-        .text-muted-small {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-
-        .mt-3 {
-            margin-top: 1rem;
-        }
-
+        .text-muted-small { font-size: 12px; color: var(--text-muted); }
+        .mt-3 { margin-top: 1rem; }
         .me-1 { margin-right: 0.25rem; }
         .me-2 { margin-right: 0.5rem; }
-
         .d-flex { display: flex; }
         .align-items-center { align-items: center; }
         .gap-2 { gap: 0.5rem; }
         .flex-grow-1 { flex-grow: 1; }
-
+        .hidden { display: none; }
         @media (max-width: 960px) {
-            .admin-sidebar {
-                display: none;
-            }
-            .admin-header {
-                padding-inline: 14px;
-            }
-            .header-search {
-                display: none;
-            }
-            .admin-content {
-                padding-inline: 14px;
-            }
-            .modern-table {
-                display: block;
-                overflow-x: auto;
-            }
-            .action-buttons {
+            .admin-sidebar { display: none; }
+            .admin-header { padding-inline: 14px; }
+            .header-search { display: none; }
+            .admin-content { padding-inline: 14px; }
+            .modern-table { display: block; overflow-x: auto; }
+            .action-buttons { flex-direction: column; }
+            .filter-bar {
                 flex-direction: column;
+                align-items: stretch;
             }
+            .filter-group { min-width: 100%; }
         }
     </style>
 </head>
-
 <body>
     <div class="admin-shell">
-        <!-- ======= Sidebar ======= -->
+        <!-- Sidebar -->
         <div class="admin-sidebar">
             <div class="sidebar-brand">
                 <div class="sidebar-logo">
@@ -692,14 +582,12 @@ foreach ($tousLesDons as $don) {
                     <span>Backoffice</span>
                 </div>
             </div>
-
             <nav class="sidebar-nav">
                 <div class="sidebar-nav-label">Navigation</div>
                 <a href="/projet-dons/backoffice.php" class="sidebar-link">
                     <i class="bi bi-speedometer2"></i>
                     <span>Dashboard</span>
                 </a>
-
                 <div class="sidebar-nav-label">Gestion</div>
                 <a href="../don/donList.php" class="sidebar-link">
                     <i class="bi bi-currency-euro"></i>
@@ -714,7 +602,6 @@ foreach ($tousLesDons as $don) {
                     <span>Nouvelle Organisation</span>
                 </a>
             </nav>
-
             <div class="sidebar-footer">
                 <span class="text-muted-small">© 2024 Mind Arena</span>
                 <a href="/projet-dons/View/frontoffice/index.php">
@@ -724,7 +611,7 @@ foreach ($tousLesDons as $don) {
             </div>
         </div>
 
-        <!-- ======= Main Content ======= -->
+        <!-- Main Content -->
         <div class="admin-main">
             <!-- Header -->
             <header class="admin-header">
@@ -734,12 +621,10 @@ foreach ($tousLesDons as $don) {
                         <div class="header-left-sub">Gestion des associations partenaires</div>
                     </div>
                 </div>
-
                 <div class="header-search">
                     <i class="bi bi-search"></i>
-                    <input type="text" placeholder="Rechercher une organisation...">
+                    <input type="text" id="headerSearch" placeholder="Rechercher une organisation...">
                 </div>
-
                 <div class="header-right">
                     <div class="theme-toggle-wrap">
                         <span>Mode</span>
@@ -751,7 +636,7 @@ foreach ($tousLesDons as $don) {
                     </div>
                     <a href="addOrganisation.php" class="btn btn-primary">
                         <i class="bi bi-plus-circle"></i>
-                        Nouvelle Organisation
+                        Nouvelle
                     </a>
                     <div class="header-user">
                         <div class="user-avatar">
@@ -782,44 +667,93 @@ foreach ($tousLesDons as $don) {
                             </div>
                         </div>
 
+                        <!-- Filter Bar -->
+                        <div class="filter-bar">
+                            <div class="filter-group">
+                                <label class="filter-label">
+                                    <i class="bi bi-search"></i>
+                                    Recherche
+                                </label>
+                                <input type="text" id="filterSearch" class="filter-select" placeholder="Par nom, description ou site web...">
+                            </div>
+
+                            <div class="filter-group">
+                                <label class="filter-label">
+                                    <i class="bi bi-filter"></i>
+                                    Montant
+                                </label>
+                                <select id="filterAmount" class="filter-select">
+                                    <option value="">Tous les Montants</option>
+                                    <option value="high">Élevé (> 1000€)</option>
+                                    <option value="medium">Moyen (500€ - 1000€)</option>
+                                    <option value="low">Faible (< 500€)</option>
+                                    <option value="zero">Zéro don</option>
+                                </select>
+                            </div>
+
+                            <button id="clearFilters" class="filter-clear-btn">
+                                <i class="bi bi-x-circle"></i>
+                                Réinitialiser
+                            </button>
+                        </div>
+
+                        <!-- Search Counter -->
+                        <div class="search-counter">
+                            <i class="bi bi-info-circle"></i>
+                            <span id="resultCount"><?= count($organisations) ?> organisation(s) trouvée(s)</span>
+                        </div>
+
                         <!-- Table -->
                         <div class="table-container">
-                            <table class="modern-table">
+                            <table class="modern-table" id="orgsTable">
                                 <thead>
                                     <tr>
-                                        <th>ID</th>
-                                        <th>Nom</th>
-                                        <th>Description</th>
+                                        <th class="sortable" onclick="sortTable(0)">
+                                            ID
+                                            <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
+                                        </th>
+                                        <th class="sortable" onclick="sortTable(1)">
+                                            Nom
+                                            <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
+                                        </th>
+                                        <th class="sortable" onclick="sortTable(2)">
+                                            Description
+                                            <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
+                                        </th>
                                         <th>Site Web</th>
-                                        <th>Montant Total</th>
-                                        <th>Pourcentage</th>
-                                        <th>Voir les dons</th>
+                                        <th class="sortable" onclick="sortTable(4)">
+                                            Montant Total
+                                            <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
+                                        </th>
+                                        <th class="sortable" onclick="sortTable(5)">
+                                            Pourcentage
+                                            <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
+                                        </th>
+                                        <th>Dons</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="tableBody">
                                     <?php if (empty($organisations)): ?>
                                         <tr>
                                             <td colspan="8" class="empty-state">
                                                 <i class="bi bi-building"></i>
                                                 <div>Aucune organisation trouvée</div>
                                                 <a href="addOrganisation.php" class="btn btn-primary mt-3">
-                                                    <i class="bi bi-plus-circle me-2"></i>Créer la première organisation
+                                                    <i class="bi bi-plus-circle me-2"></i>Créer la première
                                                 </a>
                                             </td>
                                         </tr>
                                     <?php else: ?>
-                                        <?php foreach ($organisations as $org): 
+                                        <?php foreach ($organisations as $org):
                                             $montant = $org['montant_total'] ?? 0;
                                             $pourcentage = $totalGeneral > 0 ? ($montant / $totalGeneral) * 100 : 0;
-                                            
-                                            // Compter les dons pour cette organisation
                                             $nombreDons = 0;
                                             if (isset($donsParOrganisation[$org['id']])) {
                                                 $nombreDons = count($donsParOrganisation[$org['id']]);
                                             }
                                         ?>
-                                        <tr>
+                                        <tr class="data-row" data-id="<?= $org['id'] ?>" data-name="<?= htmlspecialchars($org['nom']) ?>" data-description="<?= htmlspecialchars($org['description']) ?>" data-website="<?= htmlspecialchars($org['website_url'] ?? '') ?>" data-amount="<?= $montant ?>" data-percentage="<?= $pourcentage ?>">
                                             <td><strong>#<?= $org['id'] ?></strong></td>
                                             <td>
                                                 <strong>
@@ -832,8 +766,8 @@ foreach ($tousLesDons as $don) {
                                             </td>
                                             <td>
                                                 <?php if (!empty($org['website_url'])): ?>
-                                                    <a href="<?= htmlspecialchars($org['website_url']) ?>" 
-                                                       target="_blank" 
+                                                    <a href="<?= htmlspecialchars($org['website_url']) ?>"
+                                                       target="_blank"
                                                        class="website-link"
                                                        title="Visiter le site web">
                                                         <i class="bi bi-globe me-1"></i>Visiter
@@ -860,17 +794,17 @@ foreach ($tousLesDons as $don) {
                                             <td>
                                                 <a href="organisationDons.php?id=<?= $org['id'] ?>" class="btn btn-info">
                                                     <i class="bi bi-eye me-1"></i>
-                                                    Voir les dons 
+                                                    <?= $nombreDons ?> don(s)
                                                 </a>
                                             </td>
                                             <td>
                                                 <div class="action-buttons">
                                                     <a href="modifyOrganisation.php?id=<?= $org['id'] ?>" class="btn btn-success">
-                                                        <i class="bi bi-pencil"></i>Modifier
+                                                        <i class="bi bi-pencil"></i>
                                                     </a>
-                                                    <a href="deleteOrganisation.php?id=<?= $org['id'] ?>" class="btn btn-danger" 
-                                                       onclick="return confirm('Êtes-vous sûr de vouloir supprimer <?= htmlspecialchars($org['nom']) ?> ?')">
-                                                       <i class="bi bi-trash"></i>Supprimer
+                                                    <a href="deleteOrganisation.php?id=<?= $org['id'] ?>" class="btn btn-danger"
+                                                       onclick="return confirm('Êtes-vous sûr de supprimer <?= htmlspecialchars($org['nom']) ?> ?')">
+                                                       <i class="bi bi-trash"></i>
                                                     </a>
                                                 </div>
                                             </td>
@@ -887,23 +821,7 @@ foreach ($tousLesDons as $don) {
     </div>
 
     <script>
-        // Simple search functionality
-        const searchInput = document.querySelector('.header-search input');
-        searchInput.addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            const rows = document.querySelectorAll('.modern-table tbody tr');
-            
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                if (text.includes(searchTerm)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        });
-
-        // Thème dark / light synchronisé avec localStorage
+        // ========== THEME TOGGLE ==========
         (function () {
             const body = document.body;
             const toggle = document.getElementById('themeToggle');
@@ -920,7 +838,6 @@ foreach ($tousLesDons as $don) {
                 localStorage.setItem('ma-admin-theme', theme);
             }
 
-            // Initial
             const saved = localStorage.getItem('ma-admin-theme') || 'dark';
             applyTheme(saved);
 
@@ -932,6 +849,111 @@ foreach ($tousLesDons as $don) {
                 });
             }
         })();
+
+        // ========== ADVANCED FILTERING & SORTING ==========
+        const filterSearch = document.getElementById('filterSearch');
+        const filterAmount = document.getElementById('filterAmount');
+        const headerSearch = document.getElementById('headerSearch');
+        const clearBtn = document.getElementById('clearFilters');
+        const resultCount = document.getElementById('resultCount');
+        const tableBody = document.getElementById('tableBody');
+
+        let currentSort = { column: null, direction: 'asc' };
+
+        function getDataRows() {
+            return Array.from(document.querySelectorAll('.data-row'));
+        }
+
+        function applyFilters() {
+            const searchTerm = filterSearch.value.toLowerCase();
+            const amountFilter = filterAmount.value;
+
+            const rows = getDataRows();
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const nameText = row.getAttribute('data-name').toLowerCase();
+                const descText = row.getAttribute('data-description').toLowerCase();
+                const websiteText = row.getAttribute('data-website').toLowerCase();
+                const amountVal = parseFloat(row.getAttribute('data-amount'));
+
+                const matchesSearch =
+                    nameText.includes(searchTerm) ||
+                    descText.includes(searchTerm) ||
+                    websiteText.includes(searchTerm);
+
+                let matchesAmount = true;
+                if (amountFilter) {
+                    if (amountFilter === 'high') {
+                        matchesAmount = amountVal > 1000;
+                    } else if (amountFilter === 'medium') {
+                        matchesAmount = amountVal >= 500 && amountVal <= 1000;
+                    } else if (amountFilter === 'low') {
+                        matchesAmount = amountVal > 0 && amountVal < 500;
+                    } else if (amountFilter === 'zero') {
+                        matchesAmount = amountVal === 0;
+                    }
+                }
+
+                if (matchesSearch && matchesAmount) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            resultCount.textContent = `${visibleCount} organisation(s) trouvée(s)`;
+        }
+
+        function sortTable(columnIndex) {
+            const rows = getDataRows();
+            const direction = currentSort.column === columnIndex && currentSort.direction === 'asc' ? 'desc' : 'asc';
+            currentSort = { column: columnIndex, direction };
+
+            rows.sort((a, b) => {
+                let aVal, bVal;
+
+                if (columnIndex === 0) {
+                    aVal = parseInt(a.getAttribute('data-id'));
+                    bVal = parseInt(b.getAttribute('data-id'));
+                } else if (columnIndex === 1) {
+                    aVal = a.getAttribute('data-name').toLowerCase();
+                    bVal = b.getAttribute('data-name').toLowerCase();
+                } else if (columnIndex === 2) {
+                    aVal = a.getAttribute('data-description').toLowerCase();
+                    bVal = b.getAttribute('data-description').toLowerCase();
+                } else if (columnIndex === 4) {
+                    aVal = parseFloat(a.getAttribute('data-amount'));
+                    bVal = parseFloat(b.getAttribute('data-amount'));
+                } else if (columnIndex === 5) {
+                    aVal = parseFloat(a.getAttribute('data-percentage'));
+                    bVal = parseFloat(b.getAttribute('data-percentage'));
+                }
+
+                if (direction === 'asc') {
+                    return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+                } else {
+                    return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+                }
+            });
+
+            rows.forEach(row => tableBody.appendChild(row));
+        }
+
+        filterSearch.addEventListener('input', applyFilters);
+        filterAmount.addEventListener('change', applyFilters);
+        headerSearch.addEventListener('input', (e) => {
+            filterSearch.value = e.target.value;
+            applyFilters();
+        });
+
+        clearBtn.addEventListener('click', () => {
+            filterSearch.value = '';
+            filterAmount.value = '';
+            headerSearch.value = '';
+            applyFilters();
+        });
     </script>
 </body>
 </html>

@@ -23,6 +23,9 @@ $orgCtrl = new OrganisationController();
 try {
     $dons = $donCtrl->listDon()->fetchAll();
     $organisations = $orgCtrl->listOrganisations();
+    
+    // Récupérer le classement des donateurs
+    $topDonateurs = $donCtrl->getClassementDonateurs(5);
 
     $totalDons = 0;
     foreach ($dons as $don) {
@@ -31,6 +34,11 @@ try {
 
     $totalOrganisations = count($organisations);
     $moyenneDon = $totalOrganisations > 0 ? $totalDons / $totalOrganisations : 0;
+    
+    // Statistiques donateurs
+    $totalDonateurs = count($topDonateurs);
+    $donateurTop = $topDonateurs[0] ?? null;
+    
 } catch (Exception $e) {
     // En cas d'erreur, initialiser avec des valeurs par défaut
     $totalDons = 0;
@@ -38,6 +46,9 @@ try {
     $moyenneDon = 0;
     $dons = [];
     $organisations = [];
+    $topDonateurs = [];
+    $totalDonateurs = 0;
+    $donateurTop = null;
 }
 ?>
 <!DOCTYPE html>
@@ -478,6 +489,9 @@ try {
 
         .stat-action {
             margin-top: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
         /* Action Cards */
@@ -617,6 +631,93 @@ try {
             background-clip: text;
         }
 
+        /* Classement des donateurs */
+        .classement-section {
+            margin-top: 40px;
+        }
+
+        .classement-table {
+            width: 100%;
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            overflow: hidden;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .classement-table th {
+            background: linear-gradient(135deg, var(--primary), #a855f7);
+            color: white;
+            padding: 18px 20px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .classement-table td {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 0.95rem;
+        }
+
+        .classement-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .classement-table tr:hover {
+            background: var(--primary-soft);
+        }
+
+        .rang-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), #a855f7);
+            color: white;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-right: 12px;
+        }
+
+        .rang-1 .rang-badge {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+        }
+
+        .rang-2 .rang-badge {
+            background: linear-gradient(135deg, #C0C0C0, #A0A0A0);
+        }
+
+        .rang-3 .rang-badge {
+            background: linear-gradient(135deg, #CD7F32, #B08D57);
+        }
+
+        .classe-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            background: var(--primary-soft);
+            color: var(--primary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
         /* Simple utilities */
         .text-muted-small {
             font-size: 12px;
@@ -641,6 +742,9 @@ try {
             }
             .actions-grid {
                 grid-template-columns: 1fr;
+            }
+            .stat-action {
+                flex-direction: column;
             }
         }
     </style>
@@ -676,9 +780,11 @@ try {
                     <i class="bi bi-building"></i>
                     <span>Organisations</span>
                 </a>
-                <a href="View/backoffice/organisation/addOrganisation.php" class="sidebar-link">
-                    <i class="bi bi-plus-circle"></i>
-                    <span>Nouvelle Organisation</span>
+
+                <div class="sidebar-nav-label">Outils</div>
+                <a href="View/frontoffice/stats-live.php" target="_blank" class="sidebar-link">
+                    <i class="bi bi-graph-up"></i>
+                    <span>Stats Live</span>
                 </a>
             </nav>
 
@@ -770,16 +876,88 @@ try {
 
                         <div class="stat-card">
                             <div class="stat-icon">
-                                <i class="bi bi-graph-up"></i>
+                                <i class="bi bi-people"></i>
                             </div>
-                            <div class="stat-value"><?= number_format($moyenneDon, 2) ?> €</div>
-                            <div class="stat-title">Moyenne par Organisation</div>
+                            <div class="stat-value"><?= $totalDonateurs ?></div>
+                            <div class="stat-title">Donateurs Actifs</div>
                             <div class="stat-action">
-                                <a href="View/backoffice/organisation/organisationList.php" class="btn btn-outline-primary">
-                                    <i class="bi bi-bar-chart"></i>Statistiques
+                                <a href="View/frontoffice/classementDonateurs.php" class="btn btn-outline-primary">
+                                    <i class="bi bi-trophy"></i>Voir Classement
                                 </a>
                             </div>
                         </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="bi bi-broadcast"></i>
+                            </div>
+                            <div class="stat-value">Live Stats</div>
+                            <div class="stat-title">En direct</div>
+                            <div class="stat-action">
+                                <a href="View/frontoffice/stats-live.php" target="_blank" class="btn btn-outline-primary">
+                                    <i class="bi bi-eye"></i>Voir en direct
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Classement des Donateurs -->
+                    <div class="classement-section">
+                        <h2 class="section-title">🏆 Top Donateurs</h2>
+                        
+                        <?php if (!empty($topDonateurs)): ?>
+                            <table class="classement-table">
+                                <thead>
+                                    <tr>
+                                        <th width="80">Rang</th>
+                                        <th>Donateur</th>
+                                        <th width="150">Total des Dons</th>
+                                        <th width="150">Classe</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($topDonateurs as $index => $donateur): ?>
+                                    <tr class="rang-<?= $index + 1 ?>">
+                                        <td>
+                                            <span class="rang-badge"><?= $index + 1 ?></span>
+                                        </td>
+                                        <td>
+                                            <strong>
+                                                <?= htmlspecialchars($donateur['prenom'] ?? '') ?> 
+                                                <?= htmlspecialchars($donateur['nom'] ?? '') ?>
+                                            </strong>
+                                        </td>
+                                        <td>
+                                            <strong style="color: var(--success);">
+                                                <?= number_format($donateur['total_dons'], 2) ?> €
+                                            </strong>
+                                        </td>
+                                        <td>
+                                            <span class="classe-badge">
+                                                <?= $donateur['classe'] ?>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                            
+                            <?php if ($donateurTop): ?>
+                                <div style="text-align: center; margin-top: 20px;">
+                                    <p style="color: var(--text-muted); font-size: 0.95rem;">
+                                        🎉 <strong><?= htmlspecialchars($donateurTop['prenom'] ?? '') ?> <?= htmlspecialchars($donateurTop['nom'] ?? '') ?></strong> 
+                                        est en tête avec <?= number_format($donateurTop['total_dons'], 2) ?> € de dons !
+                                    </p>
+                                </div>
+                            <?php endif; ?>
+                            
+                        <?php else: ?>
+                            <div class="empty-state">
+                                <i class="bi bi-people"></i>
+                                <h3>Aucun donateur pour le moment</h3>
+                                <p>Les donateurs apparaîtront ici après avoir fait des dons.</p>
+                            </div>
+                        <?php endif; ?>
                     </div>
 
                     <!-- Quick Actions -->
@@ -808,6 +986,19 @@ try {
                             </p>
                             <a href="View/frontoffice/index.php" class="btn btn-outline-primary">
                                 <i class="bi bi-box-arrow-up-right"></i>Visiter le Site
+                            </a>
+                        </div>
+
+                        <div class="action-card">
+                            <div class="action-icon">
+                                <i class="bi bi-graph-up"></i>
+                            </div>
+                            <h3 class="action-title">Stats Live</h3>
+                            <p class="action-description">
+                                Visualiser et partager les statistiques en temps réel
+                            </p>
+                            <a href="View/frontoffice/stats-live.php" target="_blank" class="btn btn-primary">
+                                <i class="bi bi-broadcast"></i>Voir Stats Live
                             </a>
                         </div>
                     </div>

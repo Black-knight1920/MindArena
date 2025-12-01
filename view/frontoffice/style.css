@@ -226,6 +226,157 @@ input.invalid, select.invalid {
     background: rgba(255, 77, 77, 0.05) !important;
 }
 
+/* NOUVEAU : Styles pour les images d'organisations */
+.org-image-container {
+    width: 100%;
+    height: 200px;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    position: relative;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.org-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.org-card:hover .org-image {
+    transform: scale(1.05);
+}
+
+.org-image-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #8b5cf6, #ec4899);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 3.5rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+/* NOUVEAU : Barre de progression */
+.progress-section {
+    margin: 15px 0;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+}
+
+.progress-label {
+    color: #ccc;
+    font-weight: 500;
+}
+
+.progress-value {
+    color: #4cff4c;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.progress-goal {
+    color: #b01ba5;
+    font-size: 0.85rem;
+    margin-top: 6px;
+    text-align: right;
+    font-weight: 500;
+}
+
+.progress-bar-container {
+    width: 100%;
+    height: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4cff4c, #b01ba5);
+    border-radius: 6px;
+    transition: width 1s ease-out;
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-bar-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.2), 
+        transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* NOUVEAU : Statistiques additionnelles */
+.org-stats {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 15px;
+    font-size: 0.9rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.stat-label {
+    color: #ccc;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.stat-value {
+    color: #4cff4c;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.progress-percentage {
+    font-size: 1.4rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #4cff4c, #b01ba5);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
 /* ----- Responsive ----- */
 @media (max-width: 768px) {
     header {
@@ -254,5 +405,9 @@ input.invalid, select.invalid {
     .error {
         font-size: 0.8rem;
         padding: 6px 10px;
+    }
+    
+    .org-image-container {
+        height: 180px;
     }
 }

@@ -6,13 +6,95 @@ $orgCtrl = new OrganisationController();
 $message = '';
 $messageType = '';
 
-if ($_POST) {
+// CONFIGURATION POUR XAMPP - CORRIGÉE
+$basePath = $_SERVER['DOCUMENT_ROOT'] . '/projet-dons/';
+$uploadDir = $basePath . 'uploads/organisations/';
+$relativeUploadDir = '/projet-dons/uploads/organisations/';
+
+// Créer les dossiers s'ils n'existent pas
+if (!file_exists($uploadDir)) {
+    if (!mkdir($uploadDir, 0777, true)) {
+        $message = "❌ Erreur: Impossible de créer le dossier uploads. Veuillez créer manuellement le dossier: C:/xampp/htdocs/projet-dons/uploads/organisations/";
+        $messageType = 'error';
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
+        $nom = trim($_POST['nom']);
+        $description = trim($_POST['description']);
+        $website_url = trim($_POST['website_url'] ?? '');
+        $imageFileName = '';
+        
+        // Vérifier si un fichier a été uploadé
+        if (isset($_FILES['image_file']) && $_FILES['image_file']['error'] !== UPLOAD_ERR_NO_FILE) {
+            $file = $_FILES['image_file'];
+            
+            // Vérifier les erreurs d'upload
+            if ($file['error'] !== UPLOAD_ERR_OK) {
+                $errors = [
+                    UPLOAD_ERR_INI_SIZE => 'Le fichier dépasse la taille maximale autorisée par le serveur.',
+                    UPLOAD_ERR_FORM_SIZE => 'Le fichier dépasse la taille maximale autorisée par le formulaire.',
+                    UPLOAD_ERR_PARTIAL => 'Le fichier n\'a été que partiellement téléchargé.',
+                    UPLOAD_ERR_NO_FILE => 'Aucun fichier n\'a été téléchargé.',
+                    UPLOAD_ERR_NO_TMP_DIR => 'Dossier temporaire manquant.',
+                    UPLOAD_ERR_CANT_WRITE => 'Échec de l\'écriture du fichier sur le disque.',
+                    UPLOAD_ERR_EXTENSION => 'Une extension PHP a arrêté le téléchargement du fichier.'
+                ];
+                throw new Exception($errors[$file['error']] ?? 'Erreur inconnue lors de l\'upload.');
+            }
+            
+            // Vérifier le type de fichier
+            $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+            $fileType = mime_content_type($file['tmp_name']);
+            
+            if (!in_array($fileType, $allowedTypes)) {
+                throw new Exception("Type de fichier non autorisé. Formats acceptés: JPEG, PNG, GIF, WebP, SVG.");
+            }
+            
+            // Vérifier la taille (max 5MB)
+            $maxFileSize = 5 * 1024 * 1024; // 5MB
+            if ($file['size'] > $maxFileSize) {
+                throw new Exception("L'image est trop volumineuse (max 5MB).");
+            }
+            
+            // Vérifier que le dossier existe
+            if (!file_exists($uploadDir)) {
+                throw new Exception("Le dossier d'upload n'existe pas. Veuillez créer manuellement: C:/xampp/htdocs/projet-dons/uploads/organisations/");
+            }
+            
+            // Vérifier les permissions
+            if (!is_writable($uploadDir)) {
+                throw new Exception("Le dossier n'est pas accessible en écriture. Veuillez vérifier les permissions.");
+            }
+            
+            // Générer un nom de fichier unique
+            $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $safeNom = preg_replace('/[^a-zA-Z0-9]/', '_', $nom);
+            $imageFileName = $safeNom . '_' . time() . '.' . $extension;
+            $uploadPath = $uploadDir . $imageFileName;
+            
+            // Déplacer le fichier uploadé
+            if (!move_uploaded_file($file['tmp_name'], $uploadPath)) {
+                throw new Exception("Erreur lors du déplacement du fichier uploadé.");
+            }
+            
+            // Créer une miniature si nécessaire
+            createThumbnailIfNeeded($uploadPath);
+        } elseif (isset($_POST['existing_image']) && !empty($_POST['existing_image'])) {
+            // Utiliser une image existante
+            $imageFileName = basename($_POST['existing_image']);
+        }
+        
+        // Créer l'organisation avec le chemin de l'image
+        $imagePath = $imageFileName ? $relativeUploadDir . $imageFileName : '';
+        
         $organisation = new Organisation(
             null,
-            trim($_POST['nom']),
-            trim($_POST['description']),
-            trim($_POST['website_url'] ?? '')
+            $nom,
+            $description,
+            $website_url,
+            $imagePath
         );
         
         // Validation côté serveur
@@ -22,7 +104,10 @@ if ($_POST) {
             if ($orgCtrl->addOrganisation($organisation)) {
                 $message = "✅ Organisation ajoutée avec succès!";
                 $messageType = 'success';
-                header("refresh:2;url=organisationList.php");
+                // Redirection après 2 secondes
+                echo '<meta http-equiv="refresh" content="2;url=organisationList.php">';
+            } else {
+                throw new Exception("Erreur lors de l'ajout dans la base de données.");
             }
         } else {
             $message = "❌ Erreurs de validation:<br>• " . implode("<br>• ", $validationErrors);
@@ -33,6 +118,90 @@ if ($_POST) {
         $message = "❌ Erreur: " . $e->getMessage();
         $messageType = 'error';
     }
+}
+
+// Fonction pour créer une miniature si nécessaire
+function createThumbnailIfNeeded($imagePath) {
+    $info = getimagesize($imagePath);
+    $mime = $info['mime'];
+    
+    // Définir la taille maximale souhaitée
+    $maxWidth = 800;
+    $maxHeight = 800;
+    
+    list($width, $height) = $info;
+    
+    // Si l'image est plus grande que les dimensions max, créer une miniature
+    if ($width > $maxWidth || $height > $maxHeight) {
+        $ratio = $width / $height;
+        
+        if ($maxWidth / $maxHeight > $ratio) {
+            $newWidth = $maxHeight * $ratio;
+            $newHeight = $maxHeight;
+        } else {
+            $newWidth = $maxWidth;
+            $newHeight = $maxWidth / $ratio;
+        }
+        
+        // Créer une nouvelle image
+        switch ($mime) {
+            case 'image/jpeg':
+                $source = imagecreatefromjpeg($imagePath);
+                break;
+            case 'image/png':
+                $source = imagecreatefrompng($imagePath);
+                break;
+            case 'image/gif':
+                $source = imagecreatefromgif($imagePath);
+                break;
+            case 'image/webp':
+                if (function_exists('imagecreatefromwebp')) {
+                    $source = imagecreatefromwebp($imagePath);
+                }
+                break;
+            default:
+                return false;
+        }
+        
+        if (!$source) return false;
+        
+        $thumbnail = imagecreatetruecolor($newWidth, $newHeight);
+        
+        // Conserver la transparence pour les PNG et GIF
+        if ($mime == 'image/png' || $mime == 'image/gif') {
+            imagealphablending($thumbnail, false);
+            imagesavealpha($thumbnail, true);
+            $transparent = imagecolorallocatealpha($thumbnail, 255, 255, 255, 127);
+            imagefilledrectangle($thumbnail, 0, 0, $newWidth, $newHeight, $transparent);
+        }
+        
+        // Redimensionner l'image
+        imagecopyresampled($thumbnail, $source, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+        
+        // Sauvegarder l'image redimensionnée
+        switch ($mime) {
+            case 'image/jpeg':
+                imagejpeg($thumbnail, $imagePath, 85);
+                break;
+            case 'image/png':
+                imagepng($thumbnail, $imagePath, 8);
+                break;
+            case 'image/gif':
+                imagegif($thumbnail, $imagePath);
+                break;
+            case 'image/webp':
+                if (function_exists('imagewebp')) {
+                    imagewebp($thumbnail, $imagePath, 85);
+                }
+                break;
+        }
+        
+        // Libérer la mémoire
+        imagedestroy($source);
+        imagedestroy($thumbnail);
+    }
+    
+    return true;
 }
 ?>
 <!DOCTYPE html>
@@ -465,7 +634,7 @@ if ($_POST) {
             min-height: 120px;
         }
 
-        /* Validation Styles (gardés de votre version originale) */
+        /* Validation Styles */
         .error-field {
             border-color: var(--danger) !important;
             box-shadow: 0 0 0 0.2rem rgba(245, 54, 92, 0.25) !important;
@@ -513,6 +682,185 @@ if ($_POST) {
             background: rgba(239, 68, 68, 0.1);
             color: #7f1d1d;
             border-color: rgba(239, 68, 68, 0.2);
+        }
+
+        /* Styles pour l'upload d'image */
+        .image-upload-section {
+            margin-top: 20px;
+            padding: 20px;
+            border: 2px dashed var(--border-subtle);
+            border-radius: 10px;
+            background: var(--card-bg);
+        }
+        
+        .image-upload-area {
+            text-align: center;
+            padding: 40px 20px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            border: 2px dashed var(--primary);
+            background: var(--primary-soft);
+        }
+        
+        .image-upload-area:hover {
+            background: rgba(139, 92, 246, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .image-upload-area.dragover {
+            background: rgba(139, 92, 246, 0.25);
+            border-color: var(--primary-hover);
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+        
+        .upload-text h4 {
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+        
+        .upload-text p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .btn-upload {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-upload:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+        
+        #selectedFileName {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: var(--success);
+            display: none;
+        }
+        
+        .image-preview-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .image-preview-upload {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            border: 2px solid var(--border-subtle);
+            margin: 0 auto;
+            display: none;
+            object-fit: contain;
+        }
+        
+        .image-preview-upload.visible {
+            display: block;
+        }
+        
+        .existing-images {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-subtle);
+        }
+        
+        .existing-images-label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .image-suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .image-suggestion {
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .image-suggestion:hover {
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+        
+        .image-suggestion.active {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.3);
+        }
+        
+        .image-suggestion img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .image-suggestion-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-size: 0.7rem;
+            padding: 4px;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .no-existing-images {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-muted);
+            font-style: italic;
         }
 
         /* Button styles */
@@ -564,6 +912,7 @@ if ($_POST) {
             border-top: 1px solid var(--border-subtle);
         }
 
+        /* Responsive */
         @media (max-width: 960px) {
             .admin-sidebar {
                 display: none;
@@ -579,6 +928,20 @@ if ($_POST) {
             }
             .form-actions {
                 flex-direction: column;
+            }
+            .image-suggestions {
+                justify-content: center;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .image-suggestion {
+                width: 80px;
+                height: 80px;
+            }
+            
+            .upload-icon {
+                font-size: 36px;
             }
         }
     </style>
@@ -678,7 +1041,8 @@ if ($_POST) {
                                 </div>
                             <?php endif; ?>
 
-                            <form method="POST" id="orgForm" novalidate>
+                            <form method="POST" id="orgForm" enctype="multipart/form-data" novalidate>
+                                <!-- Champs existants (nom, description, website_url) -->
                                 <div class="form-group">
                                     <label for="nom" class="form-label">
                                         <i class="bi bi-building"></i>
@@ -688,6 +1052,8 @@ if ($_POST) {
                                            class="form-control" 
                                            id="nom" 
                                            name="nom" 
+                                           value="<?= htmlspecialchars($_POST['nom'] ?? '') ?>"
+                                           required
                                            placeholder="Ex: Médecins Sans Frontières">
                                     <span class="validation-error" id="nomError"></span>
                                     <div class="char-count" id="nomCount">0 caractères</div>
@@ -702,7 +1068,8 @@ if ($_POST) {
                                               id="description" 
                                               name="description" 
                                               rows="5"
-                                              placeholder="Décrivez l'organisation, sa mission, ses objectifs..."></textarea>
+                                              required
+                                              placeholder="Décrivez l'organisation, sa mission, ses objectifs..."><?= htmlspecialchars($_POST['description'] ?? '') ?></textarea>
                                     <span class="validation-error" id="descriptionError"></span>
                                     <div class="char-count" id="descriptionCount">0 caractères</div>
                                 </div>
@@ -712,13 +1079,107 @@ if ($_POST) {
                                         <i class="bi bi-globe"></i>
                                         Site Web (URL)
                                     </label>
-                                    <input type="text" 
+                                    <input type="url" 
                                            class="form-control" 
                                            id="website_url" 
                                            name="website_url" 
+                                           value="<?= htmlspecialchars($_POST['website_url'] ?? '') ?>"
                                            placeholder="Ex: https://www.organisation.org">
                                     <span class="validation-error" id="websiteUrlError"></span>
                                     <div class="char-count" id="websiteUrlCount">0 caractères</div>
+                                </div>
+                                
+                                <!-- Section Upload d'image -->
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="bi bi-image"></i>
+                                        Logo/Image de l'organisation
+                                    </label>
+                                    
+                                    <div class="image-upload-section">
+                                        <!-- Zone de drag & drop -->
+                                        <div class="image-upload-area" id="dropZone">
+                                            <div class="upload-icon">
+                                                <i class="bi bi-cloud-arrow-up"></i>
+                                            </div>
+                                            <div class="upload-text">
+                                                <h4>Glissez-déposez votre image ici</h4>
+                                                <p>ou cliquez pour parcourir vos fichiers</p>
+                                                <div class="file-input-wrapper">
+                                                    <button type="button" class="btn-upload">
+                                                        <i class="bi bi-folder2-open"></i>
+                                                        Choisir un fichier
+                                                    </button>
+                                                    <input type="file" 
+                                                           id="image_file" 
+                                                           name="image_file" 
+                                                           accept="image/jpeg, image/png, image/gif, image/webp, image/svg+xml"
+                                                           class="form-control">
+                                                </div>
+                                            </div>
+                                            <div id="selectedFileName"></div>
+                                        </div>
+                                        
+                                        <!-- Aperçu de l'image sélectionnée -->
+                                        <div class="image-preview-container">
+                                            <img id="imagePreviewUpload" 
+                                                 class="image-preview-upload" 
+                                                 src="" 
+                                                 alt="Aperçu de l'image">
+                                        </div>
+                                        
+                                        <!-- Images existantes -->
+                                        <div class="existing-images">
+                                            <div class="existing-images-label">
+                                                <i class="bi bi-folder-symlink"></i>
+                                                Images existantes dans la bibliothèque
+                                            </div>
+                                            
+                                            <div class="image-suggestions" id="existingImagesList">
+                                                <?php
+                                                // Lister les images existantes dans le dossier uploads
+                                                $existingImages = [];
+                                                if (file_exists($uploadDir)) {
+                                                    $files = scandir($uploadDir);
+                                                    foreach ($files as $file) {
+                                                        if ($file !== '.' && $file !== '..' && preg_match('/\.(jpg|jpeg|png|gif|webp|svg)$/i', $file)) {
+                                                            $existingImages[] = $file;
+                                                        }
+                                                    }
+                                                }
+                                                
+                                                if (empty($existingImages)): ?>
+                                                    <div class="no-existing-images">
+                                                        <i class="bi bi-inbox" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+                                                        Aucune image dans la bibliothèque
+                                                    </div>
+                                                <?php else: ?>
+                                                    <?php foreach ($existingImages as $image): 
+                                                        $imagePath = $relativeUploadDir . $image;
+                                                    ?>
+                                                        <div class="image-suggestion" 
+                                                             onclick="selectExistingImage('<?= htmlspecialchars($image) ?>', '<?= htmlspecialchars($imagePath) ?>')"
+                                                             data-image="<?= htmlspecialchars($image) ?>">
+                                                            <img src="<?= htmlspecialchars($imagePath) ?>" 
+                                                                 alt="<?= htmlspecialchars($image) ?>"
+                                                                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"%3E%3Crect width=\"100\" height=\"100\" fill=\"%23f0f0f0\"/%3E%3Ctext x=\"50\" y=\"50\" font-family=\"Arial\" font-size=\"12\" fill=\"%23999\" text-anchor=\"middle\" dy=\".3em\"%3EImage%3C/text%3E%3C/svg%3E'">
+                                                            <div class="image-suggestion-label">
+                                                                <?= htmlspecialchars(substr($image, 0, 15)) . (strlen($image) > 15 ? '...' : '') ?>
+                                                            </div>
+                                                        </div>
+                                                    <?php endforeach; ?>
+                                                <?php endif; ?>
+                                            </div>
+                                            
+                                            <!-- Champ caché pour l'image existante sélectionnée -->
+                                            <input type="hidden" id="existing_image" name="existing_image" value="">
+                                        </div>
+                                    </div>
+                                    
+                                    <span class="validation-error" id="imageError"></span>
+                                    <div class="char-count" id="imageInfo">
+                                        Formats acceptés: JPEG, PNG, GIF, WebP, SVG | Max: 5MB
+                                    </div>
                                 </div>
                                 
                                 <div class="form-actions">
@@ -740,7 +1201,7 @@ if ($_POST) {
     </div>
 
     <script>
-        // Thème dark / light synchronisé avec localStorage
+        // Thème dark / light
         (function () {
             const body = document.body;
             const toggle = document.getElementById('themeToggle');
@@ -757,7 +1218,6 @@ if ($_POST) {
                 localStorage.setItem('ma-admin-theme', theme);
             }
 
-            // Initial
             const saved = localStorage.getItem('ma-admin-theme') || 'light';
             applyTheme(saved);
 
@@ -769,9 +1229,119 @@ if ($_POST) {
             }
         })();
 
-        // Validation côté client pour les organisations (gardé de votre version originale)
+        // Gestion de l'upload d'image
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('orgForm');
+            const imageFileInput = document.getElementById('image_file');
+            const dropZone = document.getElementById('dropZone');
+            const previewImage = document.getElementById('imagePreviewUpload');
+            const selectedFileName = document.getElementById('selectedFileName');
+            const existingImageInput = document.getElementById('existing_image');
+            const existingImages = document.querySelectorAll('.image-suggestion');
+            
+            // Gestion du drag & drop
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight() {
+                dropZone.classList.add('dragover');
+            }
+
+            function unhighlight() {
+                dropZone.classList.remove('dragover');
+            }
+
+            // Gestion du drop
+            dropZone.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                if (files.length > 0) {
+                    // Vérifier que c'est une image
+                    const file = files[0];
+                    if (file.type.startsWith('image/')) {
+                        imageFileInput.files = files;
+                        updatePreview(file);
+                        // Réinitialiser la sélection d'image existante
+                        resetExistingImageSelection();
+                    } else {
+                        alert('Veuillez sélectionner uniquement des fichiers image.');
+                    }
+                }
+            }
+
+            // Gestion du changement de fichier via input
+            imageFileInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    updatePreview(this.files[0]);
+                    // Réinitialiser la sélection d'image existante
+                    resetExistingImageSelection();
+                }
+            });
+
+            // Cliquer sur la zone de drop pour ouvrir le sélecteur de fichiers
+            dropZone.addEventListener('click', function() {
+                imageFileInput.click();
+            });
+
+            // Fonction pour mettre à jour l'aperçu
+            function updatePreview(file) {
+                selectedFileName.textContent = 'Fichier sélectionné: ' + file.name;
+                selectedFileName.style.display = 'block';
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                    previewImage.classList.add('visible');
+                }
+                reader.readAsDataURL(file);
+            }
+
+            // Fonction pour sélectionner une image existante
+            window.selectExistingImage = function(imageName, imagePath) {
+                // Mettre à jour le champ caché
+                existingImageInput.value = imageName;
+                
+                // Mettre en évidence l'image sélectionnée
+                existingImages.forEach(img => {
+                    img.classList.remove('active');
+                });
+                event.target.closest('.image-suggestion').classList.add('active');
+                
+                // Afficher l'aperçu
+                previewImage.src = imagePath;
+                previewImage.classList.add('visible');
+                
+                // Effacer l'input file
+                imageFileInput.value = '';
+                selectedFileName.style.display = 'none';
+            }
+
+            // Fonction pour réinitialiser la sélection d'image existante
+            function resetExistingImageSelection() {
+                existingImageInput.value = '';
+                existingImages.forEach(img => {
+                    img.classList.remove('active');
+                });
+            }
+
+            // Validation du formulaire
             const fields = {
                 nom: document.getElementById('nom'),
                 description: document.getElementById('description'),
@@ -784,26 +1354,19 @@ if ($_POST) {
                 website_url: document.getElementById('websiteUrlCount')
             };
 
-            // Limites de caractères
-            const limits = {
-                nom: 100,
-                description: 500,
-                website_url: 255
-            };
-
             // Compteur de caractères en temps réel
             fields.nom.addEventListener('input', function() {
-                updateCharCount(this, counters.nom, limits.nom);
+                updateCharCount(this, counters.nom, 100);
                 validateField('nom');
             });
 
             fields.description.addEventListener('input', function() {
-                updateCharCount(this, counters.description, limits.description);
+                updateCharCount(this, counters.description, 500);
                 validateField('description');
             });
 
             fields.website_url.addEventListener('input', function() {
-                updateCharCount(this, counters.website_url, limits.website_url);
+                updateCharCount(this, counters.website_url, 255);
                 validateField('website_url');
             });
 
@@ -826,13 +1389,11 @@ if ($_POST) {
                 
                 if (!isValid) {
                     e.preventDefault();
-                    // Afficher un message d'erreur plus élégant
                     const alertDiv = document.createElement('div');
                     alertDiv.className = 'message error';
                     alertDiv.innerHTML = '<i class="bi bi-exclamation-triangle me-2"></i>Veuillez corriger les erreurs dans le formulaire avant de soumettre.';
                     form.parentNode.insertBefore(alertDiv, form);
                     
-                    // Scroll vers le haut pour voir le message
                     alertDiv.scrollIntoView({ behavior: 'smooth' });
                 }
             });
@@ -846,7 +1407,6 @@ if ($_POST) {
                     counter.classList.remove('warning');
                 }
                 
-                // Limiter manuellement la longueur
                 if (length > maxLength) {
                     field.value = field.value.substring(0, maxLength);
                     counter.textContent = `${maxLength} caractères (limite atteinte)`;
@@ -858,9 +1418,8 @@ if ($_POST) {
                 const field = fields[fieldName];
                 const errorElement = document.getElementById(fieldName + 'Error');
                 const value = field.value.trim();
-                const maxLength = limits[fieldName];
+                const maxLength = fieldName === 'nom' ? 100 : fieldName === 'description' ? 500 : 255;
                 
-                // Réinitialiser
                 field.classList.remove('error-field', 'success-field');
                 errorElement.textContent = '';
                 
@@ -895,7 +1454,6 @@ if ($_POST) {
                         break;
 
                     case 'website_url':
-                        // Le champ URL est optionnel, mais s'il est rempli, on valide le format
                         if (value && !isValidUrl(value)) {
                             message = "Veuillez entrer une URL valide (commençant par http:// ou https://)";
                             isValid = false;
@@ -929,9 +1487,30 @@ if ($_POST) {
             Object.keys(fields).forEach(fieldName => {
                 const field = fields[fieldName];
                 const counter = counters[fieldName];
-                updateCharCount(field, counter, limits[fieldName]);
+                const maxLength = fieldName === 'nom' ? 100 : fieldName === 'description' ? 500 : 255;
+                updateCharCount(field, counter, maxLength);
             });
         });
+
+        // Fonction pour sélectionner une image existante
+        function selectExistingImage(imageName, imagePath) {
+            document.getElementById('existing_image').value = imageName;
+            
+            // Mettre en évidence l'image sélectionnée
+            document.querySelectorAll('.image-suggestion').forEach(img => {
+                img.classList.remove('active');
+            });
+            event.target.closest('.image-suggestion').classList.add('active');
+            
+            // Afficher l'aperçu
+            const preview = document.getElementById('imagePreviewUpload');
+            preview.src = imagePath;
+            preview.classList.add('visible');
+            
+            // Effacer l'input file
+            document.getElementById('image_file').value = '';
+            document.getElementById('selectedFileName').style.display = 'none';
+        }
     </script>
 </body>
 </html>

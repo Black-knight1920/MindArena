@@ -9,12 +9,12 @@ $dons = $donCtrl->listDon();
 <head>
     <meta charset="UTF-8">
     <title>Liste des Dons - Mind Arena</title>
-    
+   
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <!-- Remix Icons pour le dark mode -->
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
-    
+   
     <style>
         /* ================= THEME VARIABLES ================= */
         :root {
@@ -370,6 +370,92 @@ $dons = $donCtrl->listDon();
             transition: background .25s ease, border-color .25s ease, box-shadow .25s ease;
         }
 
+        /* ================= FILTER BAR ================= */
+        .filter-bar {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            margin-bottom: 22px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .filter-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .filter-label i {
+            font-size: 1rem;
+        }
+
+        .filter-select {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-subtle);
+            background: var(--card-bg);
+            color: var(--text);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: border-color .2s ease, background .2s ease;
+        }
+
+        .filter-select:hover {
+            border-color: var(--primary);
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+
+        .filter-clear-btn {
+            padding: 8px 14px;
+            border: none;
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .filter-clear-btn:hover {
+            background: #ef4444;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .search-counter {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
         /* ================= TABLE STYLES ================= */
         .table-container {
             margin-top: 20px;
@@ -435,6 +521,24 @@ $dons = $donCtrl->listDon();
             font-size: 0.875rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            cursor: pointer;
+            user-select: none;
+            transition: background .2s ease;
+        }
+
+        .modern-table th:hover {
+            background: linear-gradient(135deg, #7c3aed, #9333ea);
+        }
+
+        .modern-table th .sort-icon {
+            margin-left: 6px;
+            font-size: 0.75rem;
+            opacity: 0.6;
+            transition: opacity .2s ease;
+        }
+
+        .modern-table th.sortable:hover .sort-icon {
+            opacity: 1;
         }
 
         .modern-table td {
@@ -448,7 +552,7 @@ $dons = $donCtrl->listDon();
             border-bottom: none;
         }
 
-        .modern-table tr:hover {
+        .modern-table tbody tr:hover {
             background: var(--primary-soft);
         }
 
@@ -566,6 +670,10 @@ $dons = $donCtrl->listDon();
             color: var(--text-muted);
         }
 
+        .hidden {
+            display: none;
+        }
+
         @media (max-width: 960px) {
             .admin-sidebar {
                 display: none;
@@ -582,6 +690,13 @@ $dons = $donCtrl->listDon();
             .modern-table {
                 display: block;
                 overflow-x: auto;
+            }
+            .filter-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .filter-group {
+                min-width: 100%;
             }
         }
     </style>
@@ -645,7 +760,7 @@ $dons = $donCtrl->listDon();
 
                 <div class="header-search">
                     <i class="bi bi-search"></i>
-                    <input type="text" placeholder="Rechercher un don...">
+                    <input type="text" id="headerSearch" placeholder="Rechercher un don...">
                 </div>
 
                 <div class="header-right">
@@ -672,7 +787,7 @@ $dons = $donCtrl->listDon();
                 <div class="content-inner">
                     <div class="card-shell">
                         <!-- Stats -->
-                        <?php 
+                        <?php
                         $donsData = $dons->fetchAll();
                         $total = 0;
                         $totalDons = count($donsData);
@@ -696,21 +811,87 @@ $dons = $donCtrl->listDon();
                             </div>
                         </div>
 
+                        <!-- Filter Bar -->
+                        <div class="filter-bar">
+                            <div class="filter-group">
+                                <label class="filter-label">
+                                    <i class="bi bi-search"></i>
+                                    Recherche
+                                </label>
+                                <input type="text" id="filterSearch" class="filter-select" placeholder="Par donateur, organisation ou montant...">
+                            </div>
+
+                            <div class="filter-group">
+                                <label class="filter-label">
+                                    <i class="bi bi-tag"></i>
+                                    Type
+                                </label>
+                                <select id="filterType" class="filter-select">
+                                    <option value="">Tous les Types</option>
+                                    <option value="Monétaire">Monétaire</option>
+                                    <option value="Matériel">Matériel</option>
+                                </select>
+                            </div>
+
+                            <div class="filter-group">
+                                <label class="filter-label">
+                                    <i class="bi bi-calendar"></i>
+                                    Période
+                                </label>
+                                <select id="filterPeriod" class="filter-select">
+                                    <option value="">Toutes les Dates</option>
+                                    <option value="today">Aujourd'hui</option>
+                                    <option value="week">Cette semaine</option>
+                                    <option value="month">Ce mois</option>
+                                    <option value="all">Tous</option>
+                                </select>
+                            </div>
+
+                            <button id="clearFilters" class="filter-clear-btn">
+                                <i class="bi bi-x-circle"></i>
+                                Réinitialiser
+                            </button>
+                        </div>
+
+                        <!-- Search Counter -->
+                        <div class="search-counter">
+                            <i class="bi bi-info-circle"></i>
+                            <span id="resultCount"><?= $totalDons ?> don(s) trouvé(s)</span>
+                        </div>
+
                         <!-- Table -->
                         <div class="table-container">
-                            <table class="modern-table">
+                            <table class="modern-table" id="donsTable">
                                 <thead>
                                     <tr>
-                                        <th>ID</th>
-                                        <th>Donateur</th>
-                                        <th>Montant</th>
-                                        <th>Date</th>
-                                        <th>Type</th>
-                                        <th>Organisation</th>
+                                        <th class="sortable" onclick="sortTable(0)">
+                                            ID
+                                            <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
+                                        </th>
+                                        <th class="sortable" onclick="sortTable(1)">
+                                            Donateur
+                                            <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
+                                        </th>
+                                        <th class="sortable" onclick="sortTable(2)">
+                                            Montant
+                                            <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
+                                        </th>
+                                        <th class="sortable" onclick="sortTable(3)">
+                                            Date
+                                            <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
+                                        </th>
+                                        <th class="sortable" onclick="sortTable(4)">
+                                            Type
+                                            <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
+                                        </th>
+                                        <th class="sortable" onclick="sortTable(5)">
+                                            Organisation
+                                            <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
+                                        </th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="tableBody">
                                     <?php if (empty($donsData)): ?>
                                         <tr>
                                             <td colspan="7" class="empty-state">
@@ -719,44 +900,44 @@ $dons = $donCtrl->listDon();
                                             </td>
                                         </tr>
                                     <?php else: ?>
-                                        <?php foreach ($donsData as $d): 
+                                        <?php foreach ($donsData as $d):
                                             $nomComplet = '';
                                             if (!empty($d['prenom_donateur']) || !empty($d['nom_donateur'])) {
                                                 $nomComplet = trim(($d['prenom_donateur'] ?? '') . ' ' . ($d['nom_donateur'] ?? ''));
                                             }
                                         ?>
-                                        <tr>
-                                            <td><strong>#<?= $d['id'] ?></strong></td>
-                                            <td class="donor-name">
+                                        <tr class="data-row" data-id="<?= $d['id'] ?>" data-type="<?= htmlspecialchars($d['typeDon']) ?>" data-date="<?= $d['dateDon'] ?>" data-organisation="<?= htmlspecialchars($d['organisation_nom'] ?? 'N/A') ?>" data-donor="<?= htmlspecialchars($nomComplet ?: 'Anonyme') ?>" data-amount="<?= $d['montant'] ?>">
+                                            <td data-label="ID"><strong>#<?= $d['id'] ?></strong></td>
+                                            <td data-label="Donateur" class="donor-name">
                                                 <?php if (!empty($nomComplet)): ?>
-                                                    <i class="bi bi-person me-1"></i><?= htmlspecialchars($nomComplet) ?>
+                                                    <i class="bi bi-person"></i><?= htmlspecialchars($nomComplet) ?>
                                                 <?php else: ?>
-                                                    <span class="anonymous"><i class="bi bi-eye-slash me-1"></i>Anonyme</span>
+                                                    <span class="anonymous"><i class="bi bi-eye-slash"></i>Anonyme</span>
                                                 <?php endif; ?>
                                             </td>
-                                            <td class="amount"><?= number_format($d['montant'], 2) ?> €</td>
-                                            <td><?= date('d/m/Y', strtotime($d['dateDon'])) ?></td>
-                                            <td>
+                                            <td data-label="Montant" class="amount"><?= number_format($d['montant'], 2) ?> €</td>
+                                            <td data-label="Date"><?= date('d/m/Y', strtotime($d['dateDon'])) ?></td>
+                                            <td data-label="Type">
                                                 <?php if ($d['typeDon'] === 'Monétaire'): ?>
                                                     <span class="badge badge-success"><?= htmlspecialchars($d['typeDon']) ?></span>
                                                 <?php else: ?>
                                                     <span class="badge badge-primary"><?= htmlspecialchars($d['typeDon']) ?></span>
                                                 <?php endif; ?>
                                             </td>
-                                            <td><strong><?= htmlspecialchars($d['organisation_nom'] ?? 'N/A') ?></strong></td>
-                                            <td>
-                                                <a href="deleteDon.php?id=<?= $d['id'] ?>" class="btn btn-danger" 
+                                            <td data-label="Organisation"><strong><?= htmlspecialchars($d['organisation_nom'] ?? 'N/A') ?></strong></td>
+                                            <td data-label="Actions">
+                                                <a href="deleteDon.php?id=<?= $d['id'] ?>" class="btn btn-danger"
                                                    onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce don ? Cette action est irréversible.')">
                                                    <i class="bi bi-trash"></i>Supprimer
                                                 </a>
                                             </td>
                                         </tr>
                                         <?php endforeach; ?>
-                                        
+                                       
                                         <!-- Ligne du total -->
-                                        <tr class="total-row">
+                                        <tr class="total-row" id="totalRow">
                                             <td colspan="2"><strong>Total Général</strong></td>
-                                            <td class="amount"><?= number_format($total, 2) ?> €</td>
+                                            <td class="amount" id="totalAmount"><?= number_format($total, 2) ?> €</td>
                                             <td colspan="4"></td>
                                         </tr>
                                     <?php endif; ?>
@@ -770,7 +951,7 @@ $dons = $donCtrl->listDon();
     </div>
 
     <script>
-        // Thème dark / light synchronisé avec localStorage
+        // ========== THEME TOGGLE ==========
         (function () {
             const body = document.body;
             const toggle = document.getElementById('themeToggle');
@@ -787,7 +968,6 @@ $dons = $donCtrl->listDon();
                 localStorage.setItem('ma-admin-theme', theme);
             }
 
-            // Initial
             const saved = localStorage.getItem('ma-admin-theme') || 'light';
             applyTheme(saved);
 
@@ -799,20 +979,157 @@ $dons = $donCtrl->listDon();
             }
         })();
 
-        // Simple search functionality
-        const searchInput = document.querySelector('.header-search input');
-        searchInput.addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            const rows = document.querySelectorAll('.modern-table tbody tr');
-            
+        // ========== ADVANCED FILTERING & SORTING ==========
+        const filterSearch = document.getElementById('filterSearch');
+        const filterType = document.getElementById('filterType');
+        const filterPeriod = document.getElementById('filterPeriod');
+        const headerSearch = document.getElementById('headerSearch');
+        const clearBtn = document.getElementById('clearFilters');
+        const resultCount = document.getElementById('resultCount');
+        const tableBody = document.getElementById('tableBody');
+        const totalRow = document.getElementById('totalRow');
+
+        let currentSort = { column: null, direction: 'asc' };
+
+        // Get all data rows
+        function getDataRows() {
+            return Array.from(document.querySelectorAll('.data-row'));
+        }
+
+        // Filter and display
+        function applyFilters() {
+            const searchTerm = filterSearch.value.toLowerCase();
+            const typeFilter = filterType.value;
+            const periodFilter = filterPeriod.value;
+
+            const rows = getDataRows();
+            let visibleCount = 0;
+            let visibleTotal = 0;
+
             rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                if (text.includes(searchTerm)) {
+                const donorText = row.getAttribute('data-donor').toLowerCase();
+                const orgText = row.getAttribute('data-organisation').toLowerCase();
+                const typeText = row.getAttribute('data-type');
+                const dateText = row.getAttribute('data-date');
+                const amountText = row.getAttribute('data-amount');
+
+                // Search filter
+                const matchesSearch =
+                    donorText.includes(searchTerm) ||
+                    orgText.includes(searchTerm) ||
+                    amountText.includes(searchTerm);
+
+                // Type filter
+                const matchesType = !typeFilter || typeText === typeFilter;
+
+                // Period filter
+                let matchesPeriod = true;
+                if (periodFilter) {
+                    const rowDate = new Date(dateText);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+
+                    if (periodFilter === 'today') {
+                        const rowDateOnly = new Date(rowDate);
+                        rowDateOnly.setHours(0, 0, 0, 0);
+                        matchesPeriod = rowDateOnly.getTime() === today.getTime();
+                    } else if (periodFilter === 'week') {
+                        const weekStart = new Date(today);
+                        weekStart.setDate(today.getDate() - today.getDay());
+                        matchesPeriod = rowDate >= weekStart && rowDate <= today;
+                    } else if (periodFilter === 'month') {
+                        matchesPeriod = rowDate.getMonth() === today.getMonth() && rowDate.getFullYear() === today.getFullYear();
+                    }
+                }
+
+                if (matchesSearch && matchesType && matchesPeriod) {
                     row.style.display = '';
+                    visibleCount++;
+                    visibleTotal += parseFloat(row.getAttribute('data-amount'));
                 } else {
                     row.style.display = 'none';
                 }
             });
+
+            // Update result count
+            resultCount.textContent = `${visibleCount} don(s) trouvé(s)`;
+
+            // Update total
+            if (totalRow) {
+                if (visibleCount === 0) {
+                    totalRow.style.display = 'none';
+                } else {
+                    totalRow.style.display = '';
+                    const totalCell = totalRow.querySelector('#totalAmount') || totalRow.cells[2];
+                    totalCell.textContent = number_format(visibleTotal, 2) + ' €';
+                }
+            }
+        }
+
+        // Number formatting
+        function number_format(number, decimals) {
+            number = (number + '').replace(/[^0-9+\-Ee.]/g, '');
+            const n = !isFinite(+number) ? 0 : +number;
+            const prec = !isFinite(+decimals) ? 0 : Math.abs(decimals);
+            return (Math.round(n * Math.pow(10, prec)) / Math.pow(10, prec)).toFixed(prec);
+        }
+
+        // Sorting
+        function sortTable(columnIndex) {
+            const rows = getDataRows();
+            const direction = currentSort.column === columnIndex && currentSort.direction === 'asc' ? 'desc' : 'asc';
+            currentSort = { column: columnIndex, direction };
+
+            rows.sort((a, b) => {
+                let aVal, bVal;
+
+                if (columnIndex === 0) { // ID
+                    aVal = parseInt(a.getAttribute('data-id'));
+                    bVal = parseInt(b.getAttribute('data-id'));
+                } else if (columnIndex === 1) { // Donateur
+                    aVal = a.getAttribute('data-donor').toLowerCase();
+                    bVal = b.getAttribute('data-donor').toLowerCase();
+                } else if (columnIndex === 2) { // Montant
+                    aVal = parseFloat(a.getAttribute('data-amount'));
+                    bVal = parseFloat(b.getAttribute('data-amount'));
+                } else if (columnIndex === 3) { // Date
+                    aVal = new Date(a.getAttribute('data-date'));
+                    bVal = new Date(b.getAttribute('data-date'));
+                } else if (columnIndex === 4) { // Type
+                    aVal = a.getAttribute('data-type').toLowerCase();
+                    bVal = b.getAttribute('data-type').toLowerCase();
+                } else if (columnIndex === 5) { // Organisation
+                    aVal = a.getAttribute('data-organisation').toLowerCase();
+                    bVal = b.getAttribute('data-organisation').toLowerCase();
+                }
+
+                if (direction === 'asc') {
+                    return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+                } else {
+                    return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+                }
+            });
+
+            // Re-insert rows
+            rows.forEach(row => tableBody.insertBefore(row, totalRow));
+        }
+
+        // Event listeners
+        filterSearch.addEventListener('input', applyFilters);
+        filterType.addEventListener('change', applyFilters);
+        filterPeriod.addEventListener('change', applyFilters);
+        headerSearch.addEventListener('input', (e) => {
+            filterSearch.value = e.target.value;
+            applyFilters();
+        });
+
+        // Clear filters
+        clearBtn.addEventListener('click', () => {
+            filterSearch.value = '';
+            filterType.value = '';
+            filterPeriod.value = '';
+            headerSearch.value = '';
+            applyFilters();
         });
     </script>
 </body>
