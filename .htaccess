@@ -1,0 +1,4 @@
+RewriteEngine On
+ RewriteBase /mindarena_forum/
+  RewriteRule ^admin/(.*)$ admin.php [L,QSA]
+   RewriteRule ^front/(.*)$ index.php [L,QSA]
