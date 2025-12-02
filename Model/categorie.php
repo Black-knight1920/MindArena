@@ -9,7 +9,7 @@ class Categorie {
 
     // Récupère toutes les catégories
     public function getAll() {
-        $stmt = $this->pdo->query("SELECT * FROM categories ORDER BY id DESC"); // <-- categories
+        $stmt = $this->pdo->query("SELECT * FROM categories ORDER BY id DESC");
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
