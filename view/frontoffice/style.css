@@ -1,413 +1,409 @@
-/* ----- Global ----- */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+/* 
+ * Styles spécifiques Mind Arena
+ * Complément au template EndGam
+ */
+
+:root {
+    --ma-primary: #ff4df0;
+    --ma-secondary: #b01ba5;
+    --ma-dark: #081624;
+    --ma-light: #e1d7ff;
+    --ma-success: #4cff4c;
+    --ma-warning: #ffca5f;
 }
 
+/* Body background */
 body {
-    font-family: 'Roboto', sans-serif;
-    background: #501755;
-    color: #fff;
+    background: radial-gradient(ellipse at top, #4d1b7d 0%, #2a0f4a 25%, #160820 50%, #0a0515 100%) !important;
+    background-attachment: fixed !important;
+}
+
+/* Header personnalisé */
+.header-section {
+    background: rgba(8,22,36,0.95) !important;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 20px rgba(176,27,165,0.3);
+}
+
+.mindarena-logo {
+    font-size: 1.8rem !important;
+    font-weight: 900 !important;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: linear-gradient(135deg, #ff4df0, #ffb8ff) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+    margin: 0 !important;
+}
+
+/* Hero section */
+.hero-item {
+    height: 600px !important;
+    padding-top: 150px !important;
+    background: linear-gradient(rgba(8,22,36,0.9), rgba(8,22,36,0.8)) !important;
+}
+
+.hero-title {
+    font-size: 4rem !important;
+    font-weight: 900 !important;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    text-shadow: 0 0 20px rgba(176,27,165,0.8),
+                 0 0 40px rgba(255,77,240,0.5);
+    background: linear-gradient(135deg, #ff4df0, #ffb8ff, #b01ba5) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+    line-height: 1.1;
+    margin-bottom: 20px !important;
+}
+
+.hero-subtitle {
+    font-size: 1.3rem !important;
+    color: #e1d7ff !important;
+    margin-bottom: 30px !important;
+    max-width: 600px;
+    opacity: 0.9;
+}
+
+/* Boutons Mind Arena */
+.mindarena-btn {
+    background: linear-gradient(135deg, var(--ma-primary), var(--ma-secondary)) !important;
+    color: white !important;
+    border: none !important;
+    box-shadow: 0 0 20px rgba(255,77,240,0.6),
+                0 4px 15px rgba(255,77,240,0.3) !important;
+}
+
+.mindarena-btn:hover {
+    background: linear-gradient(135deg, var(--ma-primary), #ff1bd6) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 0 30px rgba(255,77,240,0.9),
+                0 8px 25px rgba(255,77,240,0.4) !important;
+}
+
+/* Section organisations */
+.section-title h2 {
+    font-size: 2.8rem !important;
+    text-transform: uppercase;
+    font-weight: 900 !important;
+    letter-spacing: 2px;
+    background: linear-gradient(135deg, #ff4df0, #ffb8ff) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+    margin-bottom: 12px !important;
+    text-shadow: 0 0 30px rgba(255,77,240,0.3);
+}
+
+.section-title p {
+    color: #ddd !important;
+    opacity: .9;
+    max-width: 650px;
+    margin: 0 auto;
+    font-size: 1.1rem !important;
     line-height: 1.6;
 }
 
-/* ----- Header ----- */
-header {
-    background: #081624;
-    padding: 20px 40px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 0 9px 3px rgba(226,30,228,.24);
-    position: fixed;
-    width: 100%;
-    top: 0;
-    z-index: 1000;
-}
-
-header h1 {
-    font-size: 1.5rem;
-    color: #fff;
-    margin: 0;
-}
-
-nav a {
-    color: #fff;
-    text-decoration: none;
-    margin-left: 1.5rem;
-    font-weight: 500;
-    transition: color 0.3s;
-}
-
-nav a:hover { 
-    color: #b01ba5; 
-}
-
-/* ----- Hero Section ----- */
-.hero {
-    text-align: center;
-    padding: 150px 20px 80px;
-    background: linear-gradient(45deg, #501755 0%, #2d1854 100%);
-    margin-top: 80px;
-}
-
-.hero h2 {
-    font-size: 3.5rem;
-    font-weight: 900;
-    margin: 0 0 20px 0;
-    background: linear-gradient(45deg, #fff, #b01ba5);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.hero p {
-    max-width: 600px;
-    margin: 1rem auto 2rem;
-    font-size: 1.2rem;
-    color: rgba(255,255,255,.8);
-}
-
-.btn-don {
-    display: inline-block;
-    background: #fff;
-    color: #081624;
-    font-weight: 700;
-    text-transform: uppercase;
-    padding: 1rem 2rem;
-    border: none;
-    text-decoration: none;
-    border-radius: 8px;
-    box-shadow: 0 0 9px 3px rgba(226,30,228,.24);
-    transition: transform 0.3s, box-shadow 0.3s;
-    font-size: 1.1rem;
-}
-
-.btn-don:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0 15px 5px rgba(226,30,228,.4);
-}
-
-/* ----- Donation Form ----- */
-section#donation {
-    background: linear-gradient(45deg,#501755 0%,#2d1854 100%);
-    padding: 80px 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.don-container {
-    background: rgba(255,255,255,.08);
-    border: 2px solid #b01ba5;
-    box-shadow: 0 0 15px rgba(176,27,165,.4);
-    border-radius: 16px;
-    max-width: 500px;
-    width: 100%;
-    padding: 2rem 2.5rem;
-    text-align: left;
-    backdrop-filter: blur(10px);
-}
-
-.don-container h2 {
-    text-align: center;
-    font-style: italic;
-    color: #fff;
-    margin-bottom: 1.5rem;
-    text-transform: uppercase;
-    font-size: 1.8rem;
-}
-
-form {
+/* Cartes organisations */
+.org-card {
+    background: linear-gradient(135deg, rgba(8,22,36,0.95), rgba(15,30,50,0.9)) !important;
+    border-radius: 20px !important;
+    padding: 25px !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.6),
+                inset 0 1px 0 rgba(255,255,255,0.1) !important;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    height: 100%;
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    margin-bottom: 30px;
 }
 
-label {
-    font-weight: 700;
-    font-style: italic;
-    font-size: .95rem;
-    display: block;
-    margin-bottom: 0.5rem;
+.org-card:hover {
+    transform: translateY(-8px) scale(1.02) !important;
+    border-color: rgba(255,77,240,0.4) !important;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.8),
+                0 0 40px rgba(255,77,240,0.4),
+                inset 0 1px 0 rgba(255,255,255,0.15) !important;
 }
 
-input, select, button {
-    width: 100%;
-    padding: 1rem;
-    border-radius: 8px;
-    border: none;
-    font-size: 1rem;
-    transition: all 0.3s;
-}
-
-input, select {
-    background: rgba(255,255,255,.1);
-    color: #fff;
-    border: 1px solid rgba(255,255,255,.2);
-}
-
-input:focus, select:focus {
-    outline: none;
-    border-color: #b01ba5;
-    box-shadow: 0 0 10px rgba(176,27,165,.5);
-}
-
-input::placeholder { 
-    color: rgba(255,255,255,.5); 
-}
-
-select option { 
-    color: #000; 
-}
-
-button {
-    background: #b01ba5;
-    color: #fff;
-    font-weight: 700;
-    font-style: italic;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: background .3s, transform .2s;
-    margin-top: 1rem;
-}
-
-button:hover { 
-    background: #d93ee7; 
-    transform: scale(1.05);
-}
-
-/* ----- Footer ----- */
-footer {
-    background: #190d36;
-    text-align: center;
-    padding: 2rem 1rem;
-    font-size: .9rem;
-    color: #aaa;
-    line-height: 1.8;
-}
-
-/* ----- Messages de validation ----- */
-.error {
-    color: #ff4d4d;
-    font-size: 0.85rem;
-    margin-top: 0.5rem;
-    display: block;
-    font-weight: normal;
-    background: rgba(255, 77, 77, 0.1);
-    padding: 8px 12px;
-    border-radius: 5px;
-    border-left: 3px solid #ff4d4d;
-}
-
-.success {
-    color: #4cff4c;
-    font-size: 1rem;
-    margin-top: 0.5rem;
-    display: block;
-    background: rgba(76, 255, 76, 0.1);
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid #4cff4c;
-    text-align: center;
-}
-
-/* États de validation */
-input.valid, select.valid {
-    border-color: #4cff4c !important;
-    box-shadow: 0 0 8px rgba(76, 255, 76, 0.4) !important;
-    background: rgba(76, 255, 76, 0.05) !important;
-}
-
-input.invalid, select.invalid {
-    border-color: #ff4d4d !important;
-    box-shadow: 0 0 8px rgba(255, 77, 77, 0.4) !important;
-    background: rgba(255, 77, 77, 0.05) !important;
-}
-
-/* NOUVEAU : Styles pour les images d'organisations */
-.org-image-container {
-    width: 100%;
-    height: 200px;
-    border-radius: 12px;
-    overflow: hidden;
-    margin-bottom: 20px;
+/* Image de l'organisation */
+.org-thumb {
+    width: 100% !important;
+    height: 200px !important;
+    border-radius: 15px !important;
+    overflow: hidden !important;
+    margin-bottom: 20px !important;
     position: relative;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    background: rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
 }
 
-.org-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.5s ease;
-}
-
-.org-card:hover .org-image {
-    transform: scale(1.05);
-}
-
-.org-image-placeholder {
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, #8b5cf6, #ec4899);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 3.5rem;
-    font-weight: bold;
-    text-transform: uppercase;
-}
-
-/* NOUVEAU : Barre de progression */
-.progress-section {
-    margin: 15px 0;
-}
-
-.progress-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-    font-size: 0.95rem;
-}
-
-.progress-label {
-    color: #ccc;
-    font-weight: 500;
-}
-
-.progress-value {
-    color: #4cff4c;
-    font-weight: bold;
-    font-size: 1.1rem;
-}
-
-.progress-goal {
-    color: #b01ba5;
-    font-size: 0.85rem;
-    margin-top: 6px;
-    text-align: right;
-    font-weight: 500;
-}
-
-.progress-bar-container {
-    width: 100%;
-    height: 12px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
-    overflow: hidden;
-    position: relative;
-}
-
-.progress-bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #4cff4c, #b01ba5);
-    border-radius: 6px;
-    transition: width 1s ease-out;
-    position: relative;
-    overflow: hidden;
-}
-
-.progress-bar-fill::after {
-    content: '';
+.org-thumb-overlay {
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(90deg, 
-        transparent, 
-        rgba(255, 255, 255, 0.2), 
-        transparent);
-    animation: shimmer 2s infinite;
+    background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.7));
 }
 
-@keyframes shimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
+.org-link-indicator {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: linear-gradient(135deg, var(--ma-success), #2ecc71);
+    color: #000;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 2;
+    box-shadow: 0 4px 12px rgba(76,255,76,0.4);
+    transition: all 0.3s ease;
 }
 
-/* NOUVEAU : Statistiques additionnelles */
-.org-stats {
-    background: rgba(255, 255, 255, 0.05);
-    padding: 15px;
-    border-radius: 10px;
-    margin-top: 15px;
-    font-size: 0.9rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+.org-link-indicator:hover {
+    transform: scale(1.1) rotate(15deg);
+    box-shadow: 0 6px 20px rgba(76,255,76,0.6);
 }
 
-.stat-item {
+/* Contenu de la carte */
+.org-title {
+    font-size: 1.4rem !important;
+    font-weight: 700 !important;
+    margin-bottom: 15px !important;
+    color: #ff9cff !important;
+    line-height: 1.3;
+}
+
+.org-card:hover .org-title {
+    color: #ffb8ff !important;
+    text-shadow: 0 0 10px rgba(255,77,240,0.5);
+}
+
+.org-description {
+    font-size: 0.95rem !important;
+    color: #e1d7ff !important;
+    opacity: .9;
+    margin-bottom: 20px !important;
+    line-height: 1.5;
+    flex: 1;
+}
+
+/* Barre de progression */
+.progress-section {
+    margin: 20px 0 !important;
+    background: rgba(0, 0, 0, 0.25) !important;
+    padding: 20px !important;
+    border-radius: 15px !important;
+    border: 1px solid rgba(176, 27, 165, 0.3) !important;
+    backdrop-filter: blur(5px);
+}
+
+.progress-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 12px !important;
 }
 
-.stat-item:last-child {
-    margin-bottom: 0;
-    padding-bottom: 0;
-    border-bottom: none;
-}
-
-.stat-label {
-    color: #ccc;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.stat-value {
-    color: #4cff4c;
-    font-weight: bold;
-    font-size: 1.1rem;
+.progress-label {
+    color: #ccc !important;
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .progress-percentage {
-    font-size: 1.4rem;
-    font-weight: 800;
-    background: linear-gradient(135deg, #4cff4c, #b01ba5);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--ma-success) !important;
+    font-weight: bold !important;
+    font-size: 1.2rem !important;
+    background: rgba(76, 255, 76, 0.1);
+    padding: 5px 15px;
+    border-radius: 20px;
+    border: 1px solid rgba(76, 255, 76, 0.3);
 }
 
-/* ----- Responsive ----- */
+.progress-bar-container {
+    width: 100% !important;
+    height: 12px !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-radius: 6px !important;
+    overflow: hidden !important;
+    margin: 12px 0 !important;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3) !important;
+}
+
+.progress-bar-fill {
+    height: 100% !important;
+    background: linear-gradient(90deg, var(--ma-success), var(--ma-primary)) !important;
+    border-radius: 6px !important;
+    width: 0;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px !important;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.progress-current {
+    color: var(--ma-success) !important;
+    font-weight: bold !important;
+    font-size: 1.1rem !important;
+}
+
+.progress-goal {
+    color: var(--ma-primary) !important;
+    font-weight: bold !important;
+    font-size: 0.95rem !important;
+    text-align: right;
+}
+
+.progress-remaining {
+    color: var(--ma-warning) !important;
+    font-size: 0.85rem !important;
+    margin-top: 10px !important;
+    text-align: center;
+    font-style: italic;
+    width: 100%;
+}
+
+.progress-remaining.success {
+    color: var(--ma-success) !important;
+}
+
+/* Boutons */
+.buttons-container {
+    margin-top: 25px !important;
+    padding-top: 20px !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn-don-org {
+    flex: 1;
+    padding: 14px !important;
+    border-radius: 12px !important;
+    border: none !important;
+    text-decoration: none !important;
+    color: white !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    font-size: 0.95rem !important;
+    letter-spacing: 0.5px;
+    background: linear-gradient(135deg, var(--ma-primary), var(--ma-secondary)) !important;
+    box-shadow: 0 0 20px rgba(255,77,240,0.6),
+                0 4px 15px rgba(255,77,240,0.3) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-don-org:hover {
+    background: linear-gradient(135deg, var(--ma-primary), #ff1bd6) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 0 30px rgba(255,77,240,0.9),
+                0 8px 25px rgba(255,77,240,0.4) !important;
+}
+
+.btn-website {
+    flex: 1;
+    padding: 14px !important;
+    border-radius: 12px !important;
+    border: 2px solid var(--ma-primary) !important;
+    text-decoration: none !important;
+    color: #ffb8ff !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    font-size: 0.9rem !important;
+    letter-spacing: 0.5px;
+    background: rgba(8,22,36,0.7) !important;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    text-align: center;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-website:hover {
+    background: linear-gradient(135deg, var(--ma-primary), var(--ma-secondary)) !important;
+    color: #160819 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 0 25px rgba(255,77,240,0.7) !important;
+}
+
+.btn-website:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Widgets sidebar */
+.don-amount {
+    color: var(--ma-success) !important;
+    font-weight: bold;
+}
+
+/* Animation */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.org-card {
+    animation: fadeInUp 0.6s ease-out both;
+}
+
+/* Responsive */
 @media (max-width: 768px) {
-    header {
-        padding: 15px 20px;
+    .hero-title {
+        font-size: 2.5rem !important;
+    }
+    
+    .hero-subtitle {
+        font-size: 1rem !important;
+    }
+    
+    .section-title h2 {
+        font-size: 2rem !important;
+    }
+    
+    .buttons-container {
         flex-direction: column;
-        gap: 15px;
     }
     
-    nav a {
-        margin: 0 10px;
-    }
-    
-    .hero h2 {
-        font-size: 2.5rem;
-    }
-    
-    .hero {
-        padding: 120px 20px 60px;
-    }
-    
-    .don-container {
-        margin: 0 15px;
-        padding: 1.5rem;
-    }
-    
-    .error {
-        font-size: 0.8rem;
-        padding: 6px 10px;
-    }
-    
-    .org-image-container {
-        height: 180px;
+    .org-card {
+        margin-bottom: 20px;
     }
 }

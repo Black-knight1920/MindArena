@@ -23,9 +23,6 @@ $orgCtrl = new OrganisationController();
 try {
     $dons = $donCtrl->listDon()->fetchAll();
     $organisations = $orgCtrl->listOrganisations();
-    
-    // Récupérer le classement des donateurs
-    $topDonateurs = $donCtrl->getClassementDonateurs(5);
 
     $totalDons = 0;
     foreach ($dons as $don) {
@@ -35,10 +32,6 @@ try {
     $totalOrganisations = count($organisations);
     $moyenneDon = $totalOrganisations > 0 ? $totalDons / $totalOrganisations : 0;
     
-    // Statistiques donateurs
-    $totalDonateurs = count($topDonateurs);
-    $donateurTop = $topDonateurs[0] ?? null;
-    
 } catch (Exception $e) {
     // En cas d'erreur, initialiser avec des valeurs par défaut
     $totalDons = 0;
@@ -46,9 +39,6 @@ try {
     $moyenneDon = 0;
     $dons = [];
     $organisations = [];
-    $topDonateurs = [];
-    $totalDonateurs = 0;
-    $donateurTop = null;
 }
 ?>
 <!DOCTYPE html>
@@ -631,81 +621,6 @@ try {
             background-clip: text;
         }
 
-        /* Classement des donateurs */
-        .classement-section {
-            margin-top: 40px;
-        }
-
-        .classement-table {
-            width: 100%;
-            background: var(--card-bg);
-            border-radius: 16px;
-            border: 1px solid var(--card-border);
-            overflow: hidden;
-            box-shadow: var(--shadow-soft);
-        }
-
-        .classement-table th {
-            background: linear-gradient(135deg, var(--primary), #a855f7);
-            color: white;
-            padding: 18px 20px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 0.95rem;
-        }
-
-        .classement-table td {
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border-subtle);
-            font-size: 0.95rem;
-        }
-
-        .classement-table tr:last-child td {
-            border-bottom: none;
-        }
-
-        .classement-table tr:hover {
-            background: var(--primary-soft);
-        }
-
-        .rang-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary), #a855f7);
-            color: white;
-            font-weight: 700;
-            font-size: 0.9rem;
-            margin-right: 12px;
-        }
-
-        .rang-1 .rang-badge {
-            background: linear-gradient(135deg, #FFD700, #FFA500);
-        }
-
-        .rang-2 .rang-badge {
-            background: linear-gradient(135deg, #C0C0C0, #A0A0A0);
-        }
-
-        .rang-3 .rang-badge {
-            background: linear-gradient(135deg, #CD7F32, #B08D57);
-        }
-
-        .classe-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            background: var(--primary-soft);
-            color: var(--primary);
-        }
-
         .empty-state {
             text-align: center;
             padding: 40px;
@@ -750,7 +665,7 @@ try {
     </style>
 </head>
 
-<body>
+<body class="light">
     <div class="admin-shell">
         <!-- ======= Sidebar ======= -->
         <div class="admin-sidebar">
@@ -876,13 +791,13 @@ try {
 
                         <div class="stat-card">
                             <div class="stat-icon">
-                                <i class="bi bi-people"></i>
+                                <i class="bi bi-file-earmark-text"></i>
                             </div>
-                            <div class="stat-value"><?= $totalDonateurs ?></div>
-                            <div class="stat-title">Donateurs Actifs</div>
+                            <div class="stat-value"><?= count($dons) ?></div>
+                            <div class="stat-title">Nombre de Dons</div>
                             <div class="stat-action">
-                                <a href="View/frontoffice/classementDonateurs.php" class="btn btn-outline-primary">
-                                    <i class="bi bi-trophy"></i>Voir Classement
+                                <a href="View/backoffice/don/donList.php" class="btn btn-outline-primary">
+                                    <i class="bi bi-list"></i>Voir la liste
                                 </a>
                             </div>
                         </div>
@@ -899,65 +814,6 @@ try {
                                 </a>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Classement des Donateurs -->
-                    <div class="classement-section">
-                        <h2 class="section-title">🏆 Top Donateurs</h2>
-                        
-                        <?php if (!empty($topDonateurs)): ?>
-                            <table class="classement-table">
-                                <thead>
-                                    <tr>
-                                        <th width="80">Rang</th>
-                                        <th>Donateur</th>
-                                        <th width="150">Total des Dons</th>
-                                        <th width="150">Classe</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($topDonateurs as $index => $donateur): ?>
-                                    <tr class="rang-<?= $index + 1 ?>">
-                                        <td>
-                                            <span class="rang-badge"><?= $index + 1 ?></span>
-                                        </td>
-                                        <td>
-                                            <strong>
-                                                <?= htmlspecialchars($donateur['prenom'] ?? '') ?> 
-                                                <?= htmlspecialchars($donateur['nom'] ?? '') ?>
-                                            </strong>
-                                        </td>
-                                        <td>
-                                            <strong style="color: var(--success);">
-                                                <?= number_format($donateur['total_dons'], 2) ?> €
-                                            </strong>
-                                        </td>
-                                        <td>
-                                            <span class="classe-badge">
-                                                <?= $donateur['classe'] ?>
-                                            </span>
-                                        </td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                            
-                            <?php if ($donateurTop): ?>
-                                <div style="text-align: center; margin-top: 20px;">
-                                    <p style="color: var(--text-muted); font-size: 0.95rem;">
-                                        🎉 <strong><?= htmlspecialchars($donateurTop['prenom'] ?? '') ?> <?= htmlspecialchars($donateurTop['nom'] ?? '') ?></strong> 
-                                        est en tête avec <?= number_format($donateurTop['total_dons'], 2) ?> € de dons !
-                                    </p>
-                                </div>
-                            <?php endif; ?>
-                            
-                        <?php else: ?>
-                            <div class="empty-state">
-                                <i class="bi bi-people"></i>
-                                <h3>Aucun donateur pour le moment</h3>
-                                <p>Les donateurs apparaîtront ici après avoir fait des dons.</p>
-                            </div>
-                        <?php endif; ?>
                     </div>
 
                     <!-- Quick Actions -->
