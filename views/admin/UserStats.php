@@ -225,3 +225,4 @@ $topContributors = $topContributors ?? [];
         </div>
     <?php endif; ?>
 </div>
+

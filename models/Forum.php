@@ -45,6 +45,24 @@ class Forum
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    /**
+     * Liste des forums créés par un utilisateur donné.
+     */
+    public function getByCreator(string $creator, int $limit = 50): array
+    {
+        $sql = "SELECT id, title, description, created_by, created_at
+                FROM forums
+                WHERE created_by = :creator
+                ORDER BY created_at DESC, id DESC
+                LIMIT :limit";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':creator', $creator, PDO::PARAM_STR);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
     /* ---------------------------------------------------------
        CRUD
     --------------------------------------------------------- */
@@ -67,14 +85,18 @@ class Forum
      */
     public function create(string $title, ?string $description, string $createdBy): bool
     {
+        $normalizedCreator = $createdBy !== '' ? $createdBy : 'Anonyme';
+        $this->ensureUserStatsExists($normalizedCreator);
+        $descValue = ($description !== '' && $description !== null) ? $description : '';
+
         $sql = "INSERT INTO forums (title, description, created_by, created_at)
                 VALUES (:title, :description, :created_by, NOW())";
         $stmt = $this->pdo->prepare($sql);
 
         return $stmt->execute([
             ':title'       => $title,
-            ':description' => $description !== '' ? $description : null,
-            ':created_by'  => $createdBy !== '' ? $createdBy : 'Anonyme',
+            ':description' => $descValue,
+            ':created_by'  => $normalizedCreator,
         ]);
     }
 
@@ -88,19 +110,23 @@ class Forum
         ?string $description,
         ?string $createdBy = null
     ): bool {
+        $descValue = ($description !== '' && $description !== null) ? $description : '';
         $params = [
             ':id'          => $id,
             ':title'       => $title,
-            ':description' => $description !== '' ? $description : null,
+            ':description' => $descValue,
         ];
 
         if ($createdBy !== null) {
+            $normalizedCreator = $createdBy !== '' ? $createdBy : 'Anonyme';
+            $this->ensureUserStatsExists($normalizedCreator);
+
             $sql = "UPDATE forums
                     SET title = :title,
                         description = :description,
                         created_by = :created_by
                     WHERE id = :id";
-            $params[':created_by'] = $createdBy !== '' ? $createdBy : 'Anonyme';
+            $params[':created_by'] = $normalizedCreator;
         } else {
             $sql = "UPDATE forums
                     SET title = :title,
@@ -172,5 +198,21 @@ public function countForums(): int
         $sql = "SELECT COUNT(*) FROM forums";
         return (int)$this->pdo->query($sql)->fetchColumn();
     }    
-}
 
+    /**
+     * Ensure a minimal user_stats row exists for a username (to satisfy FK).
+     */
+    private function ensureUserStatsExists(string $username): void
+    {
+        if ($username === '' || $username === null) {
+            return;
+        }
+
+        $sql = "INSERT INTO user_stats (username, reputation, forums_count, publications_count, created_at, updated_at)
+                VALUES (:u, 0, 0, 0, NOW(), NOW())
+                ON DUPLICATE KEY UPDATE username = username";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':u' => $username]);
+    }
+}

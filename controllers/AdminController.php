@@ -1,14 +1,14 @@
 <?php
 
-require_once __DIR__ . '/../models/Forum.php';
-require_once __DIR__ . '/../models/Publication.php';
-require_once __DIR__ . '/../models/Report.php';
-require_once __DIR__ . '/../models/Notification.php';
-require_once __DIR__ . '/../models/User.php';
+require_once __DIR__ . '/../Models/Forum.php';
+require_once __DIR__ . '/../Models/Publication.php';
+require_once __DIR__ . '/../Models/Report.php';
+require_once __DIR__ . '/../Models/Notification.php';
+require_once __DIR__ . '/../Models/User.php';
 
-require_once __DIR__ . '/../services/NotificationService.php';
-require_once __DIR__ . '/../services/ReputationService.php';
-require_once __DIR__ . '/../services/UserStatsService.php';
+require_once __DIR__ . '/../Services/NotificationService.php';
+require_once __DIR__ . '/../Services/ReputationService.php';
+require_once __DIR__ . '/../Services/UserStatsService.php';
 // Helpers removed: inline validation used instead of external helper
 
 class AdminController
@@ -50,10 +50,10 @@ class AdminController
         extract($data);
 
         $pageTitle = $title;
-        $viewFile  = __DIR__ . '/../views/admin/' . $view . '.php';
+        $viewFile  = VIEW_PATH . '/admin/' . $view . '.php';
 
         if (!file_exists($viewFile)) {
-            $viewFile = __DIR__ . '/../views/admin/errorView.php';
+            $viewFile = VIEW_PATH . '/admin/errorView.php';
         }
 
         // Make viewFile available to the layout
@@ -64,7 +64,85 @@ class AdminController
         $data['pageTitle'] = $pageTitle;
         extract($data);
 
-        include __DIR__ . '/../views/admin/layout/layout.php';
+        include VIEW_PATH . '/admin/layout/layout.php';
+    }
+
+    private function sortForumsAdmin(array $items, string $sort, string $dir): array
+    {
+        $direction = strtolower($dir) === 'asc' ? 1 : -1;
+        $sort = in_array($sort, ['date', 'title', 'author'], true) ? $sort : 'date';
+        usort($items, function ($a, $b) use ($sort, $direction) {
+            switch ($sort) {
+                case 'title':
+                    $aval = strtolower($a['title'] ?? '');
+                    $bval = strtolower($b['title'] ?? '');
+                    break;
+                case 'author':
+                    $aval = strtolower($a['created_by'] ?? '');
+                    $bval = strtolower($b['created_by'] ?? '');
+                    break;
+                case 'date':
+                default:
+                    $aval = strtotime($a['created_at'] ?? $a['date'] ?? 'now');
+                    $bval = strtotime($b['created_at'] ?? $b['date'] ?? 'now');
+                    break;
+            }
+            if ($aval == $bval) return 0;
+            return ($aval < $bval ? -1 : 1) * $direction;
+        });
+        return $items;
+    }
+
+    private function sortPublicationsAdmin(array $items, string $sort, string $dir): array
+    {
+        $direction = strtolower($dir) === 'asc' ? 1 : -1;
+        $sort = in_array($sort, ['date', 'title', 'author'], true) ? $sort : 'date';
+        usort($items, function ($a, $b) use ($sort, $direction) {
+            switch ($sort) {
+                case 'title':
+                    $aval = strtolower($a['title'] ?? '');
+                    $bval = strtolower($b['title'] ?? '');
+                    break;
+                case 'author':
+                    $aval = strtolower($a['author'] ?? '');
+                    $bval = strtolower($b['author'] ?? '');
+                    break;
+                case 'date':
+                default:
+                    $aval = strtotime($a['created_at'] ?? $a['date'] ?? 'now');
+                    $bval = strtotime($b['created_at'] ?? $b['date'] ?? 'now');
+                    break;
+            }
+            if ($aval == $bval) return 0;
+            return ($aval < $bval ? -1 : 1) * $direction;
+        });
+        return $items;
+    }
+
+    private function sortReportsAdmin(array $items, string $sort, string $dir): array
+    {
+        $direction = strtolower($dir) === 'asc' ? 1 : -1;
+        $sort = in_array($sort, ['date', 'status', 'type'], true) ? $sort : 'date';
+        usort($items, function ($a, $b) use ($sort, $direction) {
+            switch ($sort) {
+                case 'status':
+                    $aval = strtolower($a['status'] ?? '');
+                    $bval = strtolower($b['status'] ?? '');
+                    break;
+                case 'type':
+                    $aval = strtolower($a['target_type'] ?? '');
+                    $bval = strtolower($b['target_type'] ?? '');
+                    break;
+                case 'date':
+                default:
+                    $aval = strtotime($a['created_at'] ?? $a['date'] ?? 'now');
+                    $bval = strtotime($b['created_at'] ?? $b['date'] ?? 'now');
+                    break;
+            }
+            if ($aval == $bval) return 0;
+            return ($aval < $bval ? -1 : 1) * $direction;
+        });
+        return $items;
     }
 
     /* --------------------- DASHBOARD --------------------- */
@@ -78,24 +156,52 @@ class AdminController
         $userRanking       = $this->userModel->getFakeRanking();
         $usersCount        = $this->userModel->countUsers();
 
+        // User table metrics (integrated from MindArena-feature-user dashboard)
+        $totalRegisteredUsers = 0;
+        $newUsers             = 0;
+        $activeDonors         = 0;
+        $recentUsers          = [];
+
+        try {
+            $totalRegisteredUsers = (int)$this->db->query("SELECT COUNT(*) FROM user")->fetchColumn();
+            $newUsers = (int)$this->db->query("SELECT COUNT(*) FROM user WHERE `date-inscrit` >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)")->fetchColumn();
+            $activeDonors = (int)$this->db->query("SELECT COUNT(*) FROM user WHERE donation >= 1")->fetchColumn();
+
+            $recentStmt = $this->db->query("SELECT name, `date-inscrit` AS signup_date FROM user ORDER BY id DESC LIMIT 5");
+            if ($recentStmt) {
+                $recentUsers = $recentStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            }
+        } catch (Exception $e) {
+            // Keep defaults if query fails
+        }
+
         $this->render("dashboard", "Dashboard", "dashboard", [
             "totalForums"       => $forumsCount,
             "totalPublications" => $publicationsCount,
             "totalReports"      => $reportsTotal,
             "pendingReports"    => $reportsPending,
             "userRanking"       => $userRanking,
-            "usersCount"        => $usersCount
+            "usersCount"        => $usersCount,
+            "totalRegisteredUsers" => $totalRegisteredUsers,
+            "newUsers"             => $newUsers,
+            "activeDonors"         => $activeDonors,
+            "recentUsers"          => $recentUsers,
         ]);
     }
 
     /* --------------------- FORUMS --------------------- */
     public function forumList()
     {
-        // Utiliser getAllWithStats() pour avoir le nombre de publications avec jointure
+        $sort = isset($_GET['sort']) ? strtolower($_GET['sort']) : 'date';
+        $dir  = isset($_GET['dir']) ? strtolower($_GET['dir']) : 'desc';
+
         $forums = $this->forumModel->getAllWithStats();
+        $forums = $this->sortForumsAdmin($forums, $sort, $dir);
 
         $this->render("forumList", "Forums", "forums", [
-            "forums" => $forums
+            "forums" => $forums,
+            "sort" => $sort,
+            "dir" => $dir,
         ]);
     }
 
@@ -103,14 +209,20 @@ class AdminController
     public function reportList()
     {
         // Utiliser getAllWithFullDetails() pour avoir toutes les infos avec jointures complètes
+        $sort = isset($_GET['sort']) ? strtolower($_GET['sort']) : 'date';
+        $dir  = isset($_GET['dir']) ? strtolower($_GET['dir']) : 'desc';
+
         $reports = $this->reportModel->getAllWithFullDetails();
+        $reports = $this->sortReportsAdmin($reports, $sort, $dir);
         $totalReports = $this->reportModel->count();
         $pendingReports = $this->reportModel->countPending();
 
         $this->render("reportList", "Signalements", "reports", [
             "reports" => $reports,
             "totalReports" => $totalReports,
-            "pendingReports" => $pendingReports
+            "pendingReports" => $pendingReports,
+            "sort" => $sort,
+            "dir" => $dir,
         ]);
     }
 
@@ -239,17 +351,25 @@ class AdminController
         ]);
     }
 
-    public function forumEdit()
-    {
-        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-        if ($id <= 0) {
-            header('Location: admin.php?action=forums');
-            exit;
-        }
+   public function forumEdit()
+   {
+       $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+       if ($id <= 0) {
+           header('Location: admin.php?action=forums');
+           exit;
+       }
 
-        // Utiliser getByIdWithStats() pour avoir les statistiques avec jointure
-        $forum = $this->forumModel->getByIdWithStats($id);
-        if (!$forum) {
+       // Utiliser getByIdWithStats() pour avoir les statistiques avec jointure
+       $forum = $this->forumModel->getByIdWithStats($id);
+       if (!$forum) {
+           header('Location: admin.php?action=forums');
+           exit;
+       }
+
+        // Only allow edit if reports exist
+        $reports = $this->reportModel->countByTarget('forum', $id);
+        if ($reports <= 0) {
+            $_SESSION['_flash'][] = ['type' => 'error', 'message' => 'Aucun report sur ce forum. Edition interdite.'];
             header('Location: admin.php?action=forums');
             exit;
         }
@@ -320,9 +440,16 @@ class AdminController
 
         $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
         if ($id > 0) {
+            $reports = $this->reportModel->countByTarget('forum', $id);
+            if ($reports <= 0) {
+                $_SESSION['_flash'][] = ['type' => 'error', 'message' => 'Suppression impossible : aucun signalement pour ce forum.'];
+                header('Location: admin.php?action=forums');
+                exit;
+            }
+
             try {
                 $this->forumModel->delete($id);
-                $_SESSION['_flash'][] = ['type' => 'success', 'message' => 'Forum supprimé.'];
+                $_SESSION['_flash'][] = ['type' => 'success', 'message' => 'Forum supprimé (après signalement).'];
             } catch (Exception $e) {
                 $_SESSION['_flash'][] = ['type' => 'error', 'message' => 'Erreur lors de la suppression du forum.'];
             }
@@ -410,6 +537,12 @@ class AdminController
             header('Location: admin.php?action=publications');
             exit;
         }
+        $reports = $this->reportModel->countByTarget('publication', $id);
+        if ($reports <= 0) {
+            $_SESSION['_flash'][] = ['type' => 'error', 'message' => 'Aucun report sur cette publication. Edition interdite.'];
+            header('Location: admin.php?action=publications');
+            exit;
+        }
 
         $errors = [];
         $forum_id = $publication['forum_id'] ?? 0;
@@ -481,9 +614,16 @@ class AdminController
 
         $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
         if ($id > 0) {
+            $reports = $this->reportModel->countByTarget('publication', $id);
+            if ($reports <= 0) {
+                $_SESSION['_flash'][] = ['type' => 'error', 'message' => 'Suppression impossible : aucun signalement pour cette publication.'];
+                header('Location: admin.php?action=publications');
+                exit;
+            }
+
             try {
                 $this->publicationModel->delete($id);
-                $_SESSION['_flash'][] = ['type' => 'success', 'message' => 'Publication supprimée.'];
+                $_SESSION['_flash'][] = ['type' => 'success', 'message' => 'Publication supprimée (après signalement).'];
             } catch (Exception $e) {
                 $_SESSION['_flash'][] = ['type' => 'error', 'message' => 'Erreur lors de la suppression.'];
             }
@@ -495,7 +635,7 @@ class AdminController
     /* --------------------- USER STATS --------------------- */
     public function userStats()
     {
-        require_once __DIR__ . '/../services/UserStatsService.php';
+        require_once __DIR__ . '/../Services/UserStatsService.php';
         $userStatsService = new UserStatsService($this->db);
 
         $overview = $userStatsService->getGlobalOverview();
@@ -512,6 +652,8 @@ class AdminController
     {
         // Optionnel: filtrer par forum_id si fourni
         $forum_id = isset($_GET['forum_id']) ? (int)$_GET['forum_id'] : 0;
+        $sort = isset($_GET['sort']) ? strtolower($_GET['sort']) : 'date';
+        $dir  = isset($_GET['dir']) ? strtolower($_GET['dir']) : 'desc';
         $forum = null;
 
         if ($forum_id > 0) {
@@ -520,17 +662,61 @@ class AdminController
                 header('Location: admin.php?action=forums');
                 exit;
             }
-            // Récupérer les publications pour ce forum spécifique
-            $publications = $this->publicationModel->getByForum($forum_id);
+            // Récupérer les publications pour ce forum spécifique (avec stats et reports)
+            if (method_exists($this->publicationModel, 'getByForumWithFullDetails')) {
+                $publications = $this->publicationModel->getByForumWithFullDetails($forum_id);
+            } else {
+                $publications = $this->publicationModel->getByForum($forum_id);
+            }
         } else {
             // Utiliser getAllWithFullDetails() pour avoir toutes les infos avec jointures complètes
             $publications = $this->publicationModel->getAllWithFullDetails();
         }
 
+        $publications = $this->sortPublicationsAdmin($publications, $sort, $dir);
+
         $this->render("publicationList", "Publications", "publications", [
             "publications" => $publications,
             "forum" => $forum,
-            "forum_id" => $forum_id
+            "forum_id" => $forum_id,
+            "sort" => $sort,
+            "dir" => $dir,
+        ]);
+    }
+
+    /* --------------------- ADMIN ACCOUNTS --------------------- */
+    public function adminAdd()
+    {
+        $error = '';
+        $success = '';
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $name = trim($_POST['name'] ?? '');
+            $password = trim($_POST['password'] ?? '');
+
+            if ($name === '' || $password === '') {
+                $error = 'Nom et mot de passe requis.';
+            } elseif (mb_strlen($name) < 3) {
+                $error = 'Le nom doit faire au moins 3 caractères.';
+            } elseif (mb_strlen($password) < 4) {
+                $error = 'Mot de passe trop court (min 4 caractères).';
+            } else {
+                $stmt = $this->db->prepare("SELECT COUNT(*) FROM admin WHERE name = :name");
+                $stmt->execute([':name' => $name]);
+                if ((int)$stmt->fetchColumn() > 0) {
+                    $error = 'Un admin existe déjà avec ce nom.';
+                } else {
+                    $hash = md5($password); // legacy admin auth uses md5
+                    $ins = $this->db->prepare("INSERT INTO admin (name, mdpa) VALUES (:name, :mdpa)");
+                    $ins->execute([':name' => $name, ':mdpa' => $hash]);
+                    $success = 'Admin créé avec succès.';
+                }
+            }
+        }
+
+        $this->render("adminAdd", "Créer un admin", "admin-add", [
+            'error' => $error,
+            'success' => $success,
         ]);
     }
 }

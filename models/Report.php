@@ -264,10 +264,10 @@ class Report
                 -- Statistiques de l'auteur/créateur
                 CASE 
                     WHEN r.target_type = 'forum' THEN
-                        (SELECT us.reputation FROM user_stats us WHERE us.username = f.created_by)
+                        COALESCE((SELECT us.reputation FROM user_stats us WHERE us.username = f.created_by), 0)
                     WHEN r.target_type = 'publication' THEN
-                        (SELECT us.reputation FROM user_stats us WHERE us.username = p.author)
-                    ELSE NULL
+                        COALESCE((SELECT us.reputation FROM user_stats us WHERE us.username = p.author), 0)
+                    ELSE 0
                 END AS target_author_reputation,
                 -- Comptage des autres signalements sur la même cible
                 CASE 
@@ -355,5 +355,23 @@ class Report
         $sql = "DELETE FROM reports WHERE id = :id";
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute([':id' => $id]);
+    }
+
+    /**
+     * Counts reports for a specific target.
+     */
+    public function countByTarget(string $targetType, int $targetId): int
+    {
+        if ($targetType === 'forum') {
+            $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM reports WHERE target_type = 'forum' AND forum_id = :id");
+            $stmt->execute([':id' => $targetId]);
+            return (int)$stmt->fetchColumn();
+        }
+        if ($targetType === 'publication') {
+            $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM reports WHERE target_type = 'publication' AND publication_id = :id");
+            $stmt->execute([':id' => $targetId]);
+            return (int)$stmt->fetchColumn();
+        }
+        return 0;
     }
 }

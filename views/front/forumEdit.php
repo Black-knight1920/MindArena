@@ -1,319 +1,121 @@
 <?php
 // views/front/forumEdit.php
-// Édition d'un forum par son créateur
-
-$forum = $forum ?? null;
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 $errors = $errors ?? [];
 $title = $title ?? '';
 $description = $description ?? '';
-$createdBy = $createdBy ?? '';
-
-if (!$forum) {
-    die("<h2 style='color:white;text-align:center;margin-top:50px'>❌ Forum introuvable</h2>");
-}
-
-// Base URL calculée automatiquement
-$BASE = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
-if ($BASE === '') $BASE = '/';
+$csrf = $csrf ?? ($_SESSION['_csrf'] ?? '');
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Modifier le forum - MindArena</title>
+    <title>Modifier un forum - MindArena</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <link href="/mindarena_forum/ENDGAME/img/favicon.ico" rel="shortcut icon" />
+    <link href="<?= BASE_URL ?>/ENDGAME/img/favicon.ico" rel="shortcut icon" />
     <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700,900" rel="stylesheet">
-    <link rel="stylesheet" href="/mindarena_forum/ENDGAME/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/mindarena_forum/ENDGAME/css/font-awesome.min.css">
-    <link rel="stylesheet" href="/mindarena_forum/ENDGAME/css/animate.css">
-    <link rel="stylesheet" href="/mindarena_forum/ENDGAME/css/style.css">
-
+    <link rel="stylesheet" href="<?= BASE_URL ?>/ENDGAME/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/ENDGAME/css/font-awesome.min.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/ENDGAME/css/animate.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/ENDGAME/css/style.css">
     <style>
-        :root {
-            --ma-bg: #160820;
-            --ma-card: rgba(8,22,36,0.95);
-            --ma-border: rgba(255,255,255,0.10);
-            --ma-accent: #ff4df0;
-            --ma-accent-soft: #b01ba5;
-            --ma-primary-glow: rgba(255,77,240,0.6);
-        }
-
-        body {
-            margin: 0;
-            font-family: "Roboto", sans-serif;
-            background: radial-gradient(ellipse at top, #4d1b7d 0%, #2a0f4a 25%, #160820 50%, #0a0515 100%);
-            background-attachment: fixed;
-            color: #fff;
-            padding-top: 110px;
-            overflow-x: hidden;
-        }
-
-        .page-header {
-            text-align: center;
-            padding: 60px 20px 40px;
-            position: relative;
-        }
-
-        .page-header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100px;
-            height: 4px;
-            background: linear-gradient(90deg, transparent, var(--ma-accent), transparent);
-            border-radius: 2px;
-        }
-
-        .page-header h1 {
-            font-size: 2.5rem;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            background: linear-gradient(135deg, #ff4df0, #ffb8ff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 15px;
-        }
-
-        .page-header p {
-            color: #e1d7ff;
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-
-        .form-container {
-            max-width: 700px;
-            margin: 0 auto 60px;
-            padding: 0 20px;
-        }
-
-        .form-card {
-            background: linear-gradient(135deg, rgba(8,22,36,0.95), rgba(15,30,50,0.9));
-            border-radius: 20px;
-            padding: 35px 30px;
-            border: 1px solid var(--ma-border);
-            box-shadow: 0 25px 50px rgba(0,0,0,0.7);
-        }
-
-        .form-group {
-            margin-bottom: 24px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: #ff9cff;
-            margin-bottom: 8px;
-        }
-
-        .form-group label .required {
-            color: #ff4b5c;
-        }
-
-        .form-group input,
-        .form-group textarea {
-            width: 100%;
-            padding: 14px 18px;
-            border-radius: 12px;
-            border: 2px solid var(--ma-border);
-            background: rgba(8,22,36,0.8);
-            color: #fff;
-            font-size: 0.95rem;
-            font-family: "Roboto", sans-serif;
-            outline: none;
-            transition: all 0.3s;
-        }
-
-        .form-group input:focus,
-        .form-group textarea:focus {
-            border-color: #ff4df0;
-            box-shadow: 0 0 20px rgba(255,77,240,0.4);
-            background: rgba(8,22,36,1);
-        }
-
-        .form-group textarea {
-            min-height: 120px;
-            resize: vertical;
-        }
-
-        .form-group .hint {
-            font-size: 0.85rem;
-            color: #c7c7ff;
-            opacity: 0.7;
-            margin-top: 6px;
-        }
-
-        .error-message {
-            color: #ff4b5c;
-            font-size: 0.9rem;
-            margin-top: 6px;
-            display: block;
-        }
-
-        .form-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: flex-end;
-            margin-top: 30px;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: 14px 28px;
-            border-radius: 999px;
-            border: none;
-            text-decoration: none;
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 0.9rem;
-            letter-spacing: 0.5px;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #ff4df0, #b01ba5);
-            color: #fff;
-            box-shadow: 0 0 20px rgba(255,77,240,0.6);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 30px rgba(255,77,240,0.9);
-        }
-
-        .btn-secondary {
-            background: rgba(255,255,255,0.1);
-            color: #fff;
-            border: 2px solid rgba(255,255,255,0.2);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255,255,255,0.2);
-        }
-
-        .security-note {
-            background: rgba(255,202,95,0.15);
-            border: 1px solid rgba(255,202,95,0.3);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 24px;
-        }
-
-        .security-note p {
-            margin: 0;
-            font-size: 0.9rem;
-            color: #ffca5f;
-        }
-
-        .security-note strong {
-            display: block;
-            margin-bottom: 6px;
-        }
+        body { margin:0; font-family:"Roboto",sans-serif; background: radial-gradient(circle at top, #3a1158 0, #0a0615 45%, #05030b 100%); color:#fff; padding-top:110px; min-height:100vh; }
+        .page-shell { max-width:1000px; margin:0 auto 60px; padding:25px 15px; }
+        .card-form { background:rgba(8,22,36,0.98); border-radius:18px; padding:22px 22px 18px; border:1px solid rgba(255,255,255,0.08); box-shadow:0 20px 40px rgba(0,0,0,0.7); }
+        .error-text { font-size:.78rem; color:#ff4b5c; display:none; margin-top:4px; }
+        .form-control { background:rgba(9,15,30,0.85); border-radius:12px; border:1px solid rgba(255,255,255,0.08); color:#fff; }
+        .form-control:focus { border-color:#ff4df0; box-shadow:0 0 0 1px #ff4df0; }
     </style>
 </head>
 <body>
-
 <?php include __DIR__ . '/_header.php'; ?>
+<div class="page-shell">
+    <h1 style="color:#ff4df0;font-weight:800;margin-bottom:10px;">Modifier le forum</h1>
+    <p style="color:#d7d7ff;margin-bottom:18px;">Met a jour le titre ou la description de ce forum.</p>
 
-<div class="page-header">
-    <h1>Modifier le forum</h1>
-    <p>Mets à jour les informations de ton forum</p>
-</div>
-
-<div class="form-container">
-    <div class="form-card">
-        <?php if (isset($errors['general'])): ?>
-            <div class="error-message" style="margin-bottom: 20px;">
-                <?= htmlspecialchars($errors['general']) ?>
-            </div>
-        <?php endif; ?>
-
-        <div class="security-note">
-            <strong> Vérification de sécurité</strong>
-            <p>Pour modifier ce forum, tu dois confirmer que tu es bien le créateur en entrant ton nom exact : <strong><?= htmlspecialchars($forum['created_by']) ?></strong></p>
+    <?php if (!empty($errors['general'])): ?>
+        <div class="alert alert-danger" role="alert">
+            <?= htmlspecialchars($errors['general']) ?>
         </div>
+    <?php endif; ?>
 
-        <form method="post">
-            <!-- Nom du créateur pour vérification -->
-            <div class="form-group">
-                <label for="creator_name">
-                    Ton nom (pour vérification) <span class="required">*</span>
-                </label>
-                <input
-                    type="text"
-                    id="creator_name"
-                    name="creator_name"
-                    placeholder="Entre ton nom exact pour confirmer"
-                    required
-                >
-                <?php if (isset($errors['creator_name'])): ?>
-                    <span class="error-message"><?= htmlspecialchars($errors['creator_name']) ?></span>
-                <?php endif; ?>
+    <div class="card-form">
+        <form method="post" id="forumEditForm" action="index.php?action=edit-forum&id=<?= (int)($_GET['id'] ?? 0) ?>" novalidate>
+            <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf) ?>">
+            <div class="mb-3">
+                <label class="form-label">Titre du forum <span class="text-danger">*</span></label>
+                <input type="text" name="title" id="title" class="form-control" required maxlength="80" value="<?= htmlspecialchars($title) ?>">
+                <div class="form-text">Titre entre 3 et 80 caracteres.</div>
+                <div class="error-text" id="titleError" style="<?= empty($errors['title']) ? '' : 'display:block;' ?>">
+                    <?= htmlspecialchars($errors['title'] ?? '') ?>
+                </div>
             </div>
 
-            <!-- Titre -->
-            <div class="form-group">
-                <label for="title">
-                    Titre du forum <span class="required">*</span>
-                </label>
-                <input
-                    type="text"
-                    id="title"
-                    name="title"
-                    value="<?= htmlspecialchars($title ?: $forum['title']) ?>"
-                    maxlength="80"
-                    required
-                >
-                <?php if (isset($errors['title'])): ?>
-                    <span class="error-message"><?= htmlspecialchars($errors['title']) ?></span>
-                <?php endif; ?>
-                <div class="hint">Entre 3 et 80 caractères</div>
+            <div class="mb-3">
+                <label class="form-label">Description (optionnel)</label>
+                <textarea name="description" id="description" rows="4" class="form-control" maxlength="500"><?= htmlspecialchars($description) ?></textarea>
+                <div class="form-text">Max 500 caracteres.</div>
+                <div class="error-text" id="descriptionError" style="<?= empty($errors['description']) ? '' : 'display:block;' ?>">
+                    <?= htmlspecialchars($errors['description'] ?? '') ?>
+                </div>
             </div>
 
-            <!-- Description -->
-            <div class="form-group">
-                <label for="description">Description (optionnel)</label>
-                <textarea
-                    id="description"
-                    name="description"
-                    maxlength="500"
-                ><?= htmlspecialchars($description ?: ($forum['description'] ?? '')) ?></textarea>
-                <?php if (isset($errors['description'])): ?>
-                    <span class="error-message"><?= htmlspecialchars($errors['description']) ?></span>
-                <?php endif; ?>
-                <div class="hint">Maximum 500 caractères</div>
-            </div>
-
-            <div class="form-actions">
-                <a href="<?= $BASE ?>/index.php?action=forums" class="btn btn-secondary">
-                    <i class="fa fa-arrow-left"></i> Annuler
-                </a>
-                <button type="submit" class="btn btn-primary">
-                    <i class="fa fa-save"></i> Enregistrer les modifications
-                </button>
+            <div class="d-flex gap-2">
+                <a href="index.php?action=forums" class="btn btn-secondary">Annuler</a>
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
             </div>
         </form>
     </div>
 </div>
 
-<?php include __DIR__ . '/chatbot.php'; ?>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('forumEditForm');
+    const title = document.getElementById('title');
+    const titleError = document.getElementById('titleError');
+    const description = document.getElementById('description');
+    const descriptionError = document.getElementById('descriptionError');
 
+    const showError = (el, msg) => {
+        el.textContent = msg;
+        el.style.display = msg ? 'block' : 'none';
+    };
+
+    const validateTitle = () => {
+        const v = title.value.trim();
+        if (v.length < 3 || v.length > 80) {
+            showError(titleError, 'Le titre doit contenir entre 3 et 80 caracteres.');
+            return false;
+        }
+        showError(titleError, '');
+        return true;
+    };
+
+    const validateDescription = () => {
+        const v = description.value.trim();
+        if (v.length > 500) {
+            showError(descriptionError, 'La description ne doit pas depasser 500 caracteres.');
+            return false;
+        }
+        showError(descriptionError, '');
+        return true;
+    };
+
+    title.addEventListener('input', validateTitle);
+    description.addEventListener('input', validateDescription);
+    validateTitle();
+    validateDescription();
+
+    form.addEventListener('submit', (e) => {
+        let ok = true;
+        if (!validateTitle()) ok = false;
+        if (!validateDescription()) ok = false;
+        if (!ok) e.preventDefault();
+    });
+});
+</script>
 </body>
 </html>
-
-
-
-
-
-
 

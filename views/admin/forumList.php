@@ -4,6 +4,8 @@ if (!defined('BASE_URL')) {
     require_once __DIR__ . '/../../../config/constants.php';
 }
 $forums = $forums ?? [];
+$sort = $sort ?? ($_GET['sort'] ?? 'date');
+$dir  = $dir ?? ($_GET['dir'] ?? 'desc');
 $totalForums = count($forums);
 ?>
 <style>
@@ -290,6 +292,10 @@ $totalForums = count($forums);
     body.light .btn-outline-secondary{
         color:#111827;
     }
+    .btn-disabled{
+        opacity:.45;
+        pointer-events:none;
+    }
 </style>
 
 <div class="page-head">
@@ -302,6 +308,19 @@ $totalForums = count($forums);
         <div class="chip">
             Total forums : <strong><?= (int)$totalForums ?></strong>
         </div>
+        <form method="get" class="d-flex" style="gap:8px; flex-wrap:wrap; align-items:center;">
+            <input type="hidden" name="action" value="forums">
+            <label class="form-label mb-0" for="sort">Trier par</label>
+            <select name="sort" id="sort" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="date" <?= $sort === 'date' ? 'selected' : '' ?>>Date</option>
+                <option value="title" <?= $sort === 'title' ? 'selected' : '' ?>>Titre</option>
+                <option value="author" <?= $sort === 'author' ? 'selected' : '' ?>>Auteur</option>
+            </select>
+            <select name="dir" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="desc" <?= $dir === 'desc' ? 'selected' : '' ?>>Desc</option>
+                <option value="asc" <?= $dir === 'asc' ? 'selected' : '' ?>>Asc</option>
+            </select>
+        </form>
         <a href="admin.php?action=forum-add" class="btn-primary-pill">
             <span>+</span> Nouveau forum
         </a>
@@ -370,27 +389,33 @@ $totalForums = count($forums);
                         </td>
 
                         <td>
+                            <?php $reportCount = (int)($f['reports_count'] ?? 0); ?>
                             <span class="forum-meta-small">
                                 Créé le <?= htmlspecialchars($f['created_at'] ?? '') ?>
                             </span><br>
                             <span class="badge-soft">Actif</span>
+                            <div class="creator-tag" style="margin-top:4px;">
+                                Signalements : <strong><?= $reportCount ?></strong>
+                            </div>
                         </td>
 
                         <td>
+                            <?php $hasReports = $reportCount > 0; ?>
                             <div class="table-actions">
                                 <a class="btn-xs btn-outline-secondary"
                                    href="admin.php?action=publications&amp;forum_id=<?= (int)$f['id'] ?>">
                                     <span class="ri-article-line"></span> Publications
                                 </a>
 
-                                <a class="btn-xs btn-outline"
-                                   href="admin.php?action=forum-edit&amp;id=<?= (int)$f['id'] ?>">
+                                <a class="btn-xs btn-outline <?= $hasReports ? '' : 'btn-disabled' ?>"
+                                   href="<?= $hasReports ? 'admin.php?action=forum-edit&amp;id=' . (int)$f['id'] : '#' ?>"
+                                   title="<?= $hasReports ? '' : 'Modification possible seulement après signalement' ?>">
                                     <span class="ri-edit-line"></span> Modifier
                                 </a>
 
                                 <form action="admin.php?action=forum-delete" method="post" class="d-inline-block" onsubmit="return confirm('Supprimer ce forum et toutes ses publications ?');">
                                     <input type="hidden" name="id" value="<?= (int)$f['id'] ?>">
-                                    <button type="submit" class="btn-xs btn-outline-danger">
+                                    <button type="submit" class="btn-xs btn-outline-danger <?= $hasReports ? '' : 'btn-disabled' ?>" <?= $hasReports ? '' : 'disabled' ?> title="<?= $hasReports ? '' : 'Suppression possible seulement après signalement' ?>">
                                         <span class="ri-delete-bin-6-line"></span> Supprimer
                                     </button>
                                 </form>
@@ -420,3 +445,4 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
+

@@ -1,6 +1,8 @@
 <?php
 // $publications : liste
 // $forum (optionnel) : forum filtré
+$sort = $sort ?? ($_GET['sort'] ?? 'date');
+$dir  = $dir ?? ($_GET['dir'] ?? 'desc');
 ?>
 <style>
     .page-header {
@@ -102,6 +104,23 @@
         color: #dc2626;
         background: rgba(220,38,38,0.1);
     }
+    .badge-soft{
+        display:inline-flex;
+        align-items:center;
+        padding:3px 8px;
+        border-radius:999px;
+        font-size:11px;
+        background:rgba(16,185,129,.15);
+        color:#6ee7b7;
+    }
+    body.light .badge-soft{
+        background:rgba(16,185,129,.08);
+        color:#047857;
+    }
+    .btn-disabled{
+        opacity:.45;
+        pointer-events:none;
+    }
 </style>
 <div class="page-header">
     <div>
@@ -123,7 +142,23 @@
             ?>
         </p>
     </div>
-    <div class="d-flex align-items-center gap-2">
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <form method="get" class="d-flex align-items-center gap-2 flex-wrap">
+            <input type="hidden" name="action" value="publications">
+            <?php if (!empty($forum['id'])): ?>
+                <input type="hidden" name="forum_id" value="<?= (int)$forum['id'] ?>">
+            <?php endif; ?>
+            <label class="form-label mb-0" for="sort">Trier par</label>
+            <select name="sort" id="sort" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="date" <?= $sort === 'date' ? 'selected' : '' ?>>Date</option>
+                <option value="title" <?= $sort === 'title' ? 'selected' : '' ?>>Titre</option>
+                <option value="author" <?= $sort === 'author' ? 'selected' : '' ?>>Auteur</option>
+            </select>
+            <select name="dir" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="desc" <?= $dir === 'desc' ? 'selected' : '' ?>>Desc</option>
+                <option value="asc" <?= $dir === 'asc' ? 'selected' : '' ?>>Asc</option>
+            </select>
+        </form>
         <?php if (isset($forum['id'])): ?>
             <a href="admin.php?action=forums" class="btn btn-outline-secondary btn-pill">
                 <i class="ri-arrow-left-line me-1"></i> Retour aux forums
@@ -151,11 +186,13 @@
                         <th>Auteur</th>
                         <th>Contenu</th>
                         <th>Créée le</th>
+                        <th>Signalements</th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                 <?php foreach ($publications as $p): ?>
+                    <?php $reportCount = (int)($p['reports_count'] ?? 0); $hasReports = $reportCount > 0; ?>
                     <tr>
                         <td class="small">#<?= (int)$p['id'] ?></td>
                         <?php if (!isset($forum['title'])): ?>
@@ -186,6 +223,9 @@
                                 ? htmlspecialchars($p['created_at'])
                                 : '<span class="text-muted-soft">—</span>' ?>
                         </td>
+                        <td class="small">
+                            <span class="badge-soft"><?= $reportCount ?></span>
+                        </td>
                         <td class="text-end">
                             <!-- Voir côté front -->
                             <?php if (!empty($p['forum_id'])): ?>
@@ -197,15 +237,16 @@
                             <?php endif; ?>
 
                             <!-- Modifier -->
-                            <a href="admin.php?action=publication-edit&amp;id=<?= (int)$p['id'] ?>"
-                               class="btn btn-primary-soft btn-pill btn-sm me-1">
+                            <a href="<?= $hasReports ? 'admin.php?action=publication-edit&amp;id='.(int)$p['id'] : '#' ?>"
+                               class="btn btn-primary-soft btn-pill btn-sm me-1 <?= $hasReports ? '' : 'btn-disabled' ?>"
+                               title="<?= $hasReports ? '' : 'Modification possible seulement après signalement' ?>">
                                 <i class="ri-edit-2-line"></i>
                             </a>
 
                             <!-- Supprimer -->
                             <form action="admin.php?action=publication-delete" method="post" class="d-inline-block me-1" onsubmit="return confirm('Supprimer cette publication ?');">
                                 <input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
-                                <button type="submit" class="btn btn-danger-soft btn-pill btn-sm">
+                                <button type="submit" class="btn btn-danger-soft btn-pill btn-sm <?= $hasReports ? '' : 'btn-disabled' ?>" <?= $hasReports ? '' : 'disabled' ?> title="<?= $hasReports ? '' : 'Suppression possible seulement après signalement' ?>">
                                     <i class="ri-delete-bin-6-line"></i>
                                 </button>
                             </form>
@@ -217,3 +258,4 @@
         </div>
     <?php endif; ?>
 </div>
+

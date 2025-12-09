@@ -149,19 +149,19 @@ class Notification
                 r.publication_id AS report_publication_id,
                 r.created_at AS report_created_at,
 
-                -- USER_STATS pour le créateur du forum
-                us_forum.username AS forum_creator_username,
-                us_forum.reputation AS forum_creator_reputation,
-                us_forum.forums_count AS forum_creator_forums_count,
-                us_forum.publications_count AS forum_creator_publications_count,
+                -- USER_STATS pour le créateur du forum (fallbacks pour éviter NULL)
+                COALESCE(us_forum.username, f.created_by) AS forum_creator_username,
+                COALESCE(us_forum.reputation, 0) AS forum_creator_reputation,
+                COALESCE(us_forum.forums_count, 0) AS forum_creator_forums_count,
+                COALESCE(us_forum.publications_count, 0) AS forum_creator_publications_count,
                 us_forum.created_at AS forum_creator_stats_created_at,
                 us_forum.updated_at AS forum_creator_stats_updated_at,
 
-                -- USER_STATS pour l'auteur de la publication
-                us_pub.username AS publication_author_username,
-                us_pub.reputation AS publication_author_reputation,
-                us_pub.forums_count AS publication_author_forums_count,
-                us_pub.publications_count AS publication_author_publications_count,
+                -- USER_STATS pour l'auteur de la publication (fallbacks pour éviter NULL)
+                COALESCE(us_pub.username, p.author) AS publication_author_username,
+                COALESCE(us_pub.reputation, 0) AS publication_author_reputation,
+                COALESCE(us_pub.forums_count, 0) AS publication_author_forums_count,
+                COALESCE(us_pub.publications_count, 0) AS publication_author_publications_count,
                 us_pub.created_at AS publication_author_stats_created_at,
                 us_pub.updated_at AS publication_author_stats_updated_at
 
@@ -234,19 +234,19 @@ class Notification
                 r.publication_id AS report_publication_id,
                 r.created_at AS report_created_at,
 
-                -- USER_STATS pour le créateur du forum
-                us_forum.username AS forum_creator_username,
-                us_forum.reputation AS forum_creator_reputation,
-                us_forum.forums_count AS forum_creator_forums_count,
-                us_forum.publications_count AS forum_creator_publications_count,
+                -- USER_STATS pour le créateur du forum (fallbacks pour éviter NULL)
+                COALESCE(us_forum.username, f.created_by) AS forum_creator_username,
+                COALESCE(us_forum.reputation, 0) AS forum_creator_reputation,
+                COALESCE(us_forum.forums_count, 0) AS forum_creator_forums_count,
+                COALESCE(us_forum.publications_count, 0) AS forum_creator_publications_count,
                 us_forum.created_at AS forum_creator_stats_created_at,
                 us_forum.updated_at AS forum_creator_stats_updated_at,
 
-                -- USER_STATS pour l'auteur de la publication
-                us_pub.username AS publication_author_username,
-                us_pub.reputation AS publication_author_reputation,
-                us_pub.forums_count AS publication_author_forums_count,
-                us_pub.publications_count AS publication_author_publications_count,
+                -- USER_STATS pour l'auteur de la publication (fallbacks pour éviter NULL)
+                COALESCE(us_pub.username, p.author) AS publication_author_username,
+                COALESCE(us_pub.reputation, 0) AS publication_author_reputation,
+                COALESCE(us_pub.forums_count, 0) AS publication_author_forums_count,
+                COALESCE(us_pub.publications_count, 0) AS publication_author_publications_count,
                 us_pub.created_at AS publication_author_stats_created_at,
                 us_pub.updated_at AS publication_author_stats_updated_at
 
@@ -321,19 +321,19 @@ class Notification
                 r.publication_id AS report_publication_id,
                 r.created_at AS report_created_at,
 
-                -- USER_STATS pour le créateur du forum
-                us_forum.username AS forum_creator_username,
-                us_forum.reputation AS forum_creator_reputation,
-                us_forum.forums_count AS forum_creator_forums_count,
-                us_forum.publications_count AS forum_creator_publications_count,
+                -- USER_STATS pour le créateur du forum (fallbacks pour éviter NULL)
+                COALESCE(us_forum.username, f.created_by) AS forum_creator_username,
+                COALESCE(us_forum.reputation, 0) AS forum_creator_reputation,
+                COALESCE(us_forum.forums_count, 0) AS forum_creator_forums_count,
+                COALESCE(us_forum.publications_count, 0) AS forum_creator_publications_count,
                 us_forum.created_at AS forum_creator_stats_created_at,
                 us_forum.updated_at AS forum_creator_stats_updated_at,
 
-                -- USER_STATS pour l'auteur de la publication
-                us_pub.username AS publication_author_username,
-                us_pub.reputation AS publication_author_reputation,
-                us_pub.forums_count AS publication_author_forums_count,
-                us_pub.publications_count AS publication_author_publications_count,
+                -- USER_STATS pour l'auteur de la publication (fallbacks pour éviter NULL)
+                COALESCE(us_pub.username, p.author) AS publication_author_username,
+                COALESCE(us_pub.reputation, 0) AS publication_author_reputation,
+                COALESCE(us_pub.forums_count, 0) AS publication_author_forums_count,
+                COALESCE(us_pub.publications_count, 0) AS publication_author_publications_count,
                 us_pub.created_at AS publication_author_stats_created_at,
                 us_pub.updated_at AS publication_author_stats_updated_at
 

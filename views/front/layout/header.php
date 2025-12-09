@@ -1,4 +1,4 @@
-<?php $base = "/mindarena_forum"; ?>
+<?php $base = defined('BASE_URL') ? BASE_URL : ''; ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -26,3 +26,4 @@
 </header>
 
 <main class="ma-main">
+

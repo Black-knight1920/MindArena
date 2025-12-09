@@ -16,38 +16,66 @@ if ($BASE === '') $BASE = '/';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- Assets ENDGAME -->
-    <link href="/mindarena_forum/ENDGAME/img/favicon.ico" rel="shortcut icon" />
+    <link href="<?= BASE_URL ?>/ENDGAME/img/favicon.ico" rel="shortcut icon" />
     <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700,900" rel="stylesheet">
-    <link rel="stylesheet" href="/mindarena_forum/ENDGAME/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/mindarena_forum/ENDGAME/css/font-awesome.min.css">
-    <link rel="stylesheet" href="/mindarena_forum/ENDGAME/css/animate.css">
-    <link rel="stylesheet" href="/mindarena_forum/ENDGAME/css/style.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/ENDGAME/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/ENDGAME/css/font-awesome.min.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/ENDGAME/css/animate.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/ENDGAME/css/style.css">
 
     <style>
         :root {
-            --ma-bg: #160820;
+            --ma-bg: #0b0b1a;
             --ma-card: rgba(8,22,36,0.95);
             --ma-border: rgba(255,255,255,0.10);
             --ma-accent: #ff4df0;
             --ma-accent-soft: #b01ba5;
             --ma-warning: #ffca5f;
             --ma-danger: #ff4b5c;
-            --ma-primary-glow: rgba(255,77,240,0.6);
-            --ma-secondary-glow: rgba(123,47,247,0.4);
+            --ma-primary-glow: rgba(255,77,240,0.55);
+            --ma-secondary-glow: rgba(123,47,247,0.35);
         }
 
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
             font-family: "Roboto", sans-serif;
-            background: radial-gradient(ellipse at top, #4d1b7d 0%, #2a0f4a 25%, #160820 50%, #0a0515 100%);
+            background:
+                radial-gradient(ellipse at top, #4d1b7d 0%, #2a0f4a 25%, #160820 50%, #0a0515 100%),
+                linear-gradient(135deg, rgba(255,77,240,0.05), rgba(123,47,247,0.05));
             background-attachment: fixed;
             color: #fff;
             padding-top: 110px;
             overflow-x: hidden;
+            position: relative;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background-image:
+                radial-gradient(circle at 20% 30%, rgba(255,77,240,0.06) 0, transparent 25%),
+                radial-gradient(circle at 80% 20%, rgba(123,47,247,0.08) 0, transparent 22%),
+                radial-gradient(circle at 60% 80%, rgba(0,209,255,0.04) 0, transparent 30%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(
+                135deg,
+                rgba(255,255,255,0.02) 0,
+                rgba(255,255,255,0.02) 1px,
+                transparent 1px,
+                transparent 12px
+            );
+            opacity: 0.35;
+            mix-blend-mode: screen;
+            pointer-events: none;
+            z-index: 0;
         }
 
         /* HERO ******************************************************/
@@ -57,7 +85,7 @@ if ($BASE === '') $BASE = '/';
             align-items:center;
             justify-content:center;
             text-align:center;
-            background:url('/mindarena_forum/ENDGAME/img/slider-bg-1.jpg') center/cover no-repeat;
+            background:url('<?= BASE_URL ?>/ENDGAME/img/slider-bg-1.jpg') center/cover no-repeat;
             position:relative;
             overflow: hidden;
         }
@@ -65,7 +93,7 @@ if ($BASE === '') $BASE = '/';
             content:'';
             position:absolute;
             inset:0;
-            background:linear-gradient(135deg,rgba(8,22,36,0.92),rgba(80,23,85,0.78),rgba(22,8,32,0.95));
+            background:linear-gradient(135deg,rgba(6,14,26,0.9),rgba(80,23,85,0.78),rgba(22,8,32,0.95));
         }
         .hero::after {
             content: '';
@@ -277,15 +305,15 @@ if ($BASE === '') $BASE = '/';
         .forum-grid {
             display:grid;
             grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
-            gap:20px;
+            gap:22px;
         }
         .forum-card {
-            background: linear-gradient(135deg, rgba(8,22,36,0.95), rgba(15,30,50,0.9));
+            background: linear-gradient(135deg, rgba(8,22,36,0.94), rgba(15,30,50,0.9));
             border-radius: 18px;
             padding:20px 18px 18px;
             border: 1px solid var(--ma-border);
             box-shadow: 0 20px 40px rgba(0,0,0,0.6),
-                        inset 0 1px 0 rgba(255,255,255,0.1);
+                        inset 0 1px 0 rgba(255,255,255,0.08);
             position:relative;
             overflow:hidden;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -296,8 +324,8 @@ if ($BASE === '') $BASE = '/';
             position:absolute;
             inset:-30%;
             opacity:0;
-            background:radial-gradient(circle at top left,rgba(255,77,240,0.3),transparent 60%),
-                        radial-gradient(circle at bottom right,rgba(123,47,247,0.25),transparent 60%);
+            background:radial-gradient(circle at top left,rgba(255,77,240,0.28),transparent 60%),
+                        radial-gradient(circle at bottom right,rgba(0,208,255,0.22),transparent 60%);
             transition:opacity 0.3s ease;
         }
         .forum-card::after {
@@ -307,7 +335,7 @@ if ($BASE === '') $BASE = '/';
             left: 0;
             right: 0;
             height: 3px;
-            background: linear-gradient(90deg, #ff4df0, #7b2ff7, #ff4df0);
+            background: linear-gradient(90deg, #ff4df0, #7b2ff7, #00d0ff, #ff4df0);
             background-size: 200% 100%;
             opacity: 0;
             transition: opacity 0.3s ease;
@@ -323,8 +351,8 @@ if ($BASE === '') $BASE = '/';
             transform:translateY(-6px) scale(1.02);
             border-color: rgba(255,77,240,0.4);
             box-shadow: 0 30px 60px rgba(0,0,0,0.8),
-                        0 0 40px rgba(255,77,240,0.4),
-                        inset 0 1px 0 rgba(255,255,255,0.15);
+                        0 0 40px rgba(255,77,240,0.35),
+                        inset 0 1px 0 rgba(255,255,255,0.12);
         }
 
         .forum-title {
@@ -467,13 +495,11 @@ if ($BASE === '') $BASE = '/';
     <div class="hero-inner">
         <h1 class="hero-title">Welcome to MindArena</h1>
         <p class="hero-sub">
-            L’arène communautaire où les joueurs débattent, partagent, s’entraident
-            et construisent ensemble des espaces de discussion uniques 🎮
+            L'arene communautaire ou les joueurs debattent, partagent, s'entraident et construisent ensemble des espaces de discussion uniques.
         </p>
         <div class="hero-btns">
-            <!-- ✅ on passe maintenant par index.php -->
             <a href="<?= $BASE ?>/index.php?action=forums" class="btn-neon">Parcourir les forums</a>
-            <a href="<?= $BASE ?>/index.php?action=add-forum" class="btn-neon-outline">Créer un forum</a>
+            <a href="<?= isset($_SESSION['user']) ? $BASE . '/index.php?action=add-forum' : $BASE . '/index.php?action=login' ?>" class="btn-neon-outline">Créer un forum</a>
         </div>
     </div>
 </section>
@@ -594,3 +620,4 @@ window.MA_CHAT_CONTEXT = 'default';
 
 </body>
 </html>
+

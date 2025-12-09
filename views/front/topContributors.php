@@ -21,12 +21,12 @@ if ($BASE === '') $BASE = '/';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- Assets ENDGAME -->
-    <link href="/mindarena_forum/endgame/img/favicon.ico" rel="shortcut icon" />
+    <link href="<?= BASE_URL ?>/ENDGAME/img/favicon.ico" rel="shortcut icon" />
     <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700,900" rel="stylesheet">
-    <link rel="stylesheet" href="/mindarena_forum/endgame/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/mindarena_forum/endgame/css/font-awesome.min.css">
-    <link rel="stylesheet" href="/mindarena_forum/endgame/css/animate.css">
-    <link rel="stylesheet" href="/mindarena_forum/endgame/css/style.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/ENDGAME/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/ENDGAME/css/font-awesome.min.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/ENDGAME/css/animate.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/ENDGAME/css/style.css">
 
     <style>
         :root {
@@ -419,6 +419,7 @@ if ($BASE === '') $BASE = '/';
 
 </body>
 </html>
+
 
 
 

@@ -163,4 +163,57 @@ class UserStatsService
         
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
+
+    /**
+     * Récupère les stats et le rang d'un utilisateur.
+     */
+    public function getUserStatsWithRank(string $username): ?array
+    {
+        // Agrège forums + publications par nom
+        $sql = "
+            SELECT
+                u.name,
+                SUM(u.forums)       AS forums_count,
+                SUM(u.publications) AS publications_count,
+                (SUM(u.forums) * 3 + SUM(u.publications)) AS score
+            FROM (
+                SELECT created_by AS name,
+                       COUNT(*)   AS forums,
+                       0          AS publications
+                FROM forums
+                WHERE created_by IS NOT NULL AND created_by <> ''
+                GROUP BY created_by
+
+                UNION ALL
+
+                SELECT author AS name,
+                       0      AS forums,
+                       COUNT(*) AS publications
+                FROM publications
+                WHERE author IS NOT NULL AND author <> ''
+                GROUP BY author
+            ) AS u
+            GROUP BY u.name
+            ORDER BY score DESC, name ASC
+        ";
+
+        $stmt = $this->pdo->query($sql);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $rank = 1;
+        foreach ($rows as $row) {
+            if ($row['name'] === $username) {
+                return [
+                    'name'                => $row['name'],
+                    'forums_count'        => (int)$row['forums_count'],
+                    'publications_count'  => (int)$row['publications_count'],
+                    'score'               => (int)$row['score'],
+                    'rank'                => $rank,
+                ];
+            }
+            $rank++;
+        }
+
+        return null;
+    }
 }

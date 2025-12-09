@@ -15,6 +15,8 @@ if (!defined('BASE_URL')) {
     require_once __DIR__ . '/../../../config/constants.php';
 }
 $baseUrl = BASE_URL;
+$sort = $sort ?? ($_GET['sort'] ?? 'date');
+$dir  = $dir ?? ($_GET['dir'] ?? 'desc');
 ?>
 
 <style>
@@ -135,14 +137,37 @@ $baseUrl = BASE_URL;
     }
 
     /* ===== FILTRES STATUT ===== */
-    .report-filters {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 10px;
-        align-items: center;
-        justify-content: space-between;
-    }
+.report-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+    align-items: center;
+    justify-content: space-between;
+}
+.sort-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+.sort-form label {
+    font-size: 12px;
+    opacity: .75;
+    margin-right: 2px;
+}
+.sort-form select {
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    background: transparent;
+    color: inherit;
+    border: 1px solid rgba(148,163,184,0.6);
+}
+.sort-form select:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(129,140,248,0.4);
+}
     .report-filter-group {
         display: flex;
         flex-wrap: wrap;
@@ -474,6 +499,19 @@ $baseUrl = BASE_URL;
             <h2>Liste des signalements</h2>
             <span><?= count($reports) ?> lignes</span>
         </div>
+        <form method="get" class="sort-form">
+            <input type="hidden" name="action" value="reports">
+            <label for="sort">Trier par</label>
+            <select name="sort" id="sort" onchange="this.form.submit()">
+                <option value="date" <?= $sort === 'date' ? 'selected' : '' ?>>Date</option>
+                <option value="status" <?= $sort === 'status' ? 'selected' : '' ?>>Statut</option>
+                <option value="type" <?= $sort === 'type' ? 'selected' : '' ?>>Type</option>
+            </select>
+            <select name="dir" onchange="this.form.submit()">
+                <option value="desc" <?= $dir === 'desc' ? 'selected' : '' ?>>Desc</option>
+                <option value="asc" <?= $dir === 'asc' ? 'selected' : '' ?>>Asc</option>
+            </select>
+        </form>
     </div>
 
     <div class="report-filters">
@@ -711,3 +749,4 @@ $baseUrl = BASE_URL;
         });
     });
 </script>
+

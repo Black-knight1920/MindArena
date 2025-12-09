@@ -1,22 +1,20 @@
 <?php
 
+require_once __DIR__ . '/../Models/Forum.php';
+require_once __DIR__ . '/../Models/Report.php';
 class ForumController
 {
     private PDO $pdo;
     private Forum $forumModel;
+    private Report $reportModel;
 
     public function __construct(PDO $pdo)
     {
         $this->pdo = $pdo;
-
-        require_once __DIR__ . '/../models/Forum.php';
         $this->forumModel = new Forum($pdo);
+        $this->reportModel = new Report($pdo);
     }
 
-    /**
-     * Récupère tous les forums pour le front.
-     * Utilise getAllFront() si la méthode existe, sinon getAll().
-     */
     private function getAllForumsForFront(): array
     {
         if (method_exists($this->forumModel, 'getAllFront')) {
@@ -27,120 +25,137 @@ class ForumController
             return $this->forumModel->getAll();
         }
 
-        // Sécurité : si aucune méthode n’existe, renvoyer un tableau vide
         return [];
     }
 
-    /* =========================================================
-       PAGE ACCUEIL (home) – hero + grid de forums
-    ========================================================= */
+    private function currentUsername(): ?string
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        return $_SESSION['user']['username'] ?? null;
+    }
+
+    private function isAdmin(): bool
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        return ($_SESSION['user']['role'] ?? '') === 'admin';
+    }
+
+    private function sortForums(array $forums, string $sort, string $dir): array
+    {
+        $direction = strtolower($dir) === 'asc' ? 1 : -1;
+        $sort = in_array($sort, ['date', 'title', 'author'], true) ? $sort : 'date';
+
+        usort($forums, function ($a, $b) use ($sort, $direction) {
+            switch ($sort) {
+                case 'title':
+                    $aval = strtolower($a['title'] ?? '');
+                    $bval = strtolower($b['title'] ?? '');
+                    break;
+                case 'author':
+                    $aval = strtolower($a['created_by'] ?? '');
+                    $bval = strtolower($b['created_by'] ?? '');
+                    break;
+                case 'date':
+                default:
+                    $aval = strtotime($a['created_at'] ?? $a['date'] ?? 'now');
+                    $bval = strtotime($b['created_at'] ?? $b['date'] ?? 'now');
+                    break;
+            }
+            if ($aval == $bval) return 0;
+            return ($aval < $bval ? -1 : 1) * $direction;
+        });
+        return $forums;
+    }
+
+    private function ensureOwner(array $forum): void
+    {
+        $currentUser = $this->currentUsername();
+        if (!$currentUser || strcasecmp($currentUser, (string)($forum['created_by'] ?? '')) !== 0) {
+            if (session_status() === PHP_SESSION_NONE) session_start();
+            $_SESSION['_flash'][] = ['type' => 'error', 'message' => 'Action non autorisAc.'];
+            header('Location: index.php?action=forums');
+            exit;
+        }
+    }
+
     public function home(): void
     {
         $forums = $this->getAllForumsForFront();
+        $currentUser = $this->currentUsername();
+        $isAdmin = $this->isAdmin();
 
-        // Vue home.php (celle que tu as envoyée)
-        include __DIR__ . '/../views/front/home.php';
+        include VIEW_PATH . '/front/home.php';
     }
 
-    /* =========================================================
-       LISTE DES FORUMS (page "Forums")
-    ========================================================= */
     public function listFront(): void
     {
         $forums = $this->getAllForumsForFront();
+        foreach ($forums as &$f) {
+            $f['report_count'] = $this->reportModel->countByTarget('forum', (int)($f['id'] ?? 0));
+        }
+        unset($f);
+        $sort = isset($_GET['sort']) ? strtolower($_GET['sort']) : 'date';
+        $dir  = isset($_GET['dir']) ? strtolower($_GET['dir']) : 'desc';
+        $forums = $this->sortForums($forums, $sort, $dir);
+        $currentUser = $this->currentUsername();
+        $isAdmin = $this->isAdmin();
 
-        // Vue forumList.php (style carte, liste uniquement)
-        include __DIR__ . '/../views/front/forumList.php';
+        include VIEW_PATH . '/front/forumList.php';
     }
 
-    /* =========================================================
-       CRÉATION DE FORUM CÔTÉ FRONT (page "New Forum")
-    ========================================================= */
     public function addFront(): void
     {
+        $currentUser = $this->currentUsername();
+        if (!$currentUser) {
+            header('Location: login.php');
+            exit;
+        }
+
         $errors = [];
         $title = '';
         $description = '';
-        $createdBy = '';
-
+        $createdBy = $currentUser;
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // sanitize inputs
             $title = trim(strip_tags($_POST['title'] ?? ''));
             $description = trim(strip_tags($_POST['description'] ?? ''));
-            $createdBy = strtolower(preg_replace('/\s+/', ' ', trim($_POST['created_by'] ?? '')));
 
             if ($title === '') {
                 $errors['title'] = 'Le titre est obligatoire.';
             } else {
                 $err = [];
                 $len = mb_strlen($title);
-                if ($len < 3) $err[] = 'Le titre doit contenir au moins 3 caractères.';
-                if ($len > 80) $err[] = 'Le titre ne doit pas dépasser 80 caractères.';
+                if ($len < 3) $err[] = 'Le titre doit contenir au moins 3 caractAres.';
+                if ($len > 80) $err[] = 'Le titre ne doit pas dAcpasser 80 caractAres.';
                 if ($err) $errors['title'] = implode(' ', $err);
             }
 
-            if ($createdBy === '') {
-                $createdBy = 'Invité';
+            // Description: optional but max 500 chars
+            if ($description !== '') {
+                $dlen = mb_strlen($description);
+                if ($dlen > 500) {
+                    $errors['description'] = 'La description ne doit pas dAcpasser 500 caractAres.';
+                }
             }
 
             if (empty($errors)) {
                 $this->forumModel->create($title, $description, $createdBy);
                 if (session_status() === PHP_SESSION_NONE) session_start();
-                $_SESSION['_flash'][] = ['type' => 'success', 'message' => 'Forum créé.'];
+                $_SESSION['_flash'][] = ['type' => 'success', 'message' => 'Forum crAcAc.'];
                 header('Location: index.php?action=forums');
                 exit;
             }
         }
 
-        // On passe $errors, $title, $description, $createdBy à la vue
-        include __DIR__ . '/../views/front/forumAdd.php';
+        include VIEW_PATH . '/front/forumAdd.php';
     }
 
-    /* =========================================================
-       SUPPRESSION D’UN FORUM CÔTÉ FRONT (optionnel)
-    ========================================================= */
-    public function deleteFront(): void
-    {
-        if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
-            die('ID de forum invalide.');
-        }
-
-        $id = (int) $_GET['id'];
-        $forum = $this->forumModel->getById($id);
-
-        if (!$forum) {
-            header('Location: index.php?action=forums');
-            exit;
-        }
-
-        // Verify creator authorization
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $creator_name = strtolower(preg_replace('/\s+/', ' ', trim($_POST['creator_name'] ?? '')));
-            $forum_creator = strtolower(preg_replace('/\s+/', ' ', trim($forum['created_by'])));
-
-            if ($creator_name === $forum_creator) {
-                if (method_exists($this->forumModel, 'delete')) {
-                    $this->forumModel->delete($id);
-                }
-
-                if (session_status() === PHP_SESSION_NONE) session_start();
-                $_SESSION['_flash'][] = ['type' => 'success', 'message' => 'Forum supprimé.'];
-                header('Location: index.php?action=forums');
-                exit;
-            }
-        }
-
-        // If not POST or authorization failed, show error
-        $errors = ['creator_name' => 'Nom incorrect. Tu dois être le créateur pour supprimer ce forum.'];
-        include __DIR__ . '/../views/front/forumDeleteConfirm.php';
-    }
-
-    /* =========================================================
-       ÉDITION D'UN FORUM CÔTÉ FRONT
-    ========================================================= */
     public function editFront(): void
     {
-        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
         if ($id <= 0) {
             header('Location: index.php?action=forums');
             exit;
@@ -152,52 +167,57 @@ class ForumController
             exit;
         }
 
+        // Admin: passe par panneau admin seulement si signale
+        if ($this->isAdmin()) {
+            $reports = $this->reportModel->countByTarget('forum', $id);
+            if ($reports > 0) {
+                header('Location: admin.php?action=forum-edit&id=' . $id);
+                exit;
+            }
+        }
+
+        $currentUser = $this->currentUsername();
+        if (!$currentUser) {
+            header('Location: login.php');
+            exit;
+        }
+
+        $this->ensureOwner($forum);
+
         $errors = [];
         $title = $forum['title'] ?? '';
         $description = $forum['description'] ?? '';
-        $createdBy = $forum['created_by'] ?? '';
-
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // Verify the user is the creator
-            $creator_name = strtolower(preg_replace('/\s+/', ' ', trim($_POST['creator_name'] ?? '')));
-            $forum_creator = strtolower(preg_replace('/\s+/', ' ', trim($forum['created_by'])));
-
-            if ($creator_name !== $forum_creator) {
-                $errors['creator_name'] = 'Nom incorrect. Tu dois être le créateur pour modifier ce forum.';
-            }
-
             $title = trim(strip_tags($_POST['title'] ?? ''));
             $description = trim(strip_tags($_POST['description'] ?? ''));
-            $createdBy = strtolower(preg_replace('/\\s+/', ' ', trim($_POST['created_by'] ?? '')));
 
             if ($title === '') {
                 $errors['title'] = 'Le titre est obligatoire.';
             } else {
                 $err = [];
                 $len = mb_strlen($title);
-                if ($len < 3) $err[] = 'Le titre doit contenir au moins 3 caractères.';
-                if ($len > 80) $err[] = 'Le titre ne doit pas dépasser 80 caractères.';
+                if ($len < 3) $err[] = 'Le titre doit contenir au moins 3 caracteres.';
+                if ($len > 80) $err[] = 'Le titre ne doit pas depasser 80 caracteres.';
                 if ($err) $errors['title'] = implode(' ', $err);
+            }
+            if ($description !== '' && mb_strlen($description) > 500) {
+                $errors['description'] = 'La description ne doit pas depasser 500 caracteres.';
             }
 
             if (empty($errors)) {
-                $this->forumModel->update($id, $title, $description, $createdBy);
-                if (session_status() === PHP_SESSION_NONE) session_start();
-                $_SESSION['_flash'][] = ['type' => 'success', 'message' => 'Forum mis à jour.'];
+                $this->forumModel->update($id, $title, $description);
+                $_SESSION['_flash'][] = ['type' => 'success', 'message' => 'Forum mis a jour.'];
                 header('Location: index.php?action=forums');
                 exit;
             }
         }
 
-        include __DIR__ . '/../views/front/forumEdit.php';
+        include VIEW_PATH . '/front/forumEdit.php';
     }
 
-    /* =========================================================
-       PAGE DE CONFIRMATION DE SUPPRESSION D'UN FORUM
-    ========================================================= */
     public function deleteConfirmFront(): void
     {
-        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
         if ($id <= 0) {
             header('Location: index.php?action=forums');
             exit;
@@ -209,7 +229,61 @@ class ForumController
             exit;
         }
 
-        $errors = [];
-        include __DIR__ . '/../views/front/forumDeleteConfirm.php';
+        if ($this->isAdmin()) {
+            $reports = $this->reportModel->countByTarget('forum', $id);
+            if ($reports > 0) {
+                header('Location: admin.php?action=forum-delete&id=' . $id);
+                exit;
+            }
+        }
+
+        $currentUser = $this->currentUsername();
+        if (!$currentUser) {
+            header('Location: login.php');
+            exit;
+        }
+        $this->ensureOwner($forum);
+
+        include VIEW_PATH . '/front/forumDeleteConfirm.php';
+    }
+
+    public function deleteFront(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: index.php?action=forums');
+            exit;
+        }
+
+        $id = isset($_POST['id']) ? (int) $_POST['id'] : 0;
+        if ($id <= 0) {
+            header('Location: index.php?action=forums');
+            exit;
+        }
+
+        $forum = $this->forumModel->getById($id);
+        if (!$forum) {
+            header('Location: index.php?action=forums');
+            exit;
+        }
+
+        if ($this->isAdmin()) {
+            $reports = $this->reportModel->countByTarget('forum', $id);
+            if ($reports > 0) {
+                header('Location: admin.php?action=forum-delete&id=' . $id);
+                exit;
+            }
+        }
+
+        $currentUser = $this->currentUsername();
+        if (!$currentUser) {
+            header('Location: login.php');
+            exit;
+        }
+        $this->ensureOwner($forum);
+
+        $this->forumModel->delete($id);
+        $_SESSION['_flash'][] = ['type' => 'success', 'message' => 'Forum supprime.'];
+        header('Location: index.php?action=forums');
+        exit;
     }
 }

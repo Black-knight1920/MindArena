@@ -1,0 +1,10 @@
+RewriteEngine On
+RewriteBase /mindarena_forum/
+
+# Serve existing files directly
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Route everything else to index
+RewriteRule ^ index.php [L]

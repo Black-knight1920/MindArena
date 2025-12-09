@@ -38,7 +38,7 @@ if (mb_strlen($userMessage) > 2000) {
 $userMessage = htmlspecialchars($userMessage, ENT_QUOTES, 'UTF-8');
 
 // Charger la config AI
-$configFile = __DIR__ . '/config/ai.php';
+$configFile = dirname(__DIR__, 2) . '/config/ai.php';
 if (!file_exists($configFile)) {
     echo json_encode(['error' => 'Config AI manquante (config/ai.php introuvable)']);
     exit;
@@ -217,3 +217,4 @@ $displayReply = 'Réponse=' . $botReply;
 echo json_encode([
     'reply' => $displayReply
 ]);
+

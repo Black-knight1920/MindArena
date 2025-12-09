@@ -113,6 +113,7 @@ $errors      = $errors      ?? [];
         font-size:11px;
         color:#fca5a5;
         margin-top:2px;
+        display:none;
     }
 
     .form-footer{
@@ -171,8 +172,14 @@ $errors      = $errors      ?? [];
 
 <div class="page-head-simple">
     <h1>Nouveau forum</h1>
-    <p>Crée une nouvelle catégorie de discussion pour la communauté.</p>
+    <p>Creer une nouvelle categorie de discussion pour la communaute.</p>
 </div>
+
+<?php if (!empty($errors['general'])): ?>
+    <div class="alert alert-danger" role="alert">
+        <?= htmlspecialchars($errors['general']) ?>
+    </div>
+<?php endif; ?>
 
 <div class="form-shell">
     <div class="form-card">
@@ -194,16 +201,16 @@ $errors      = $errors      ?? [];
                     placeholder="Ex. : Annonces officielles"
                     required
                 >
-                <div class="hint">Un titre clair et concis (3 à 80 caractères).</div>
-                <div class="error-text" id="titleError">
-                    <?= isset($errors['title']) ? htmlspecialchars($errors['title']) : '' ?>
+                <div class="hint">Un titre clair et concis (3 a 80 caracteres).</div>
+                <div class="error-text" id="titleError" style="<?= empty($errors['title']) ? '' : 'display:block;' ?>">
+                    <?= htmlspecialchars($errors['title'] ?? '') ?>
                 </div>
             </div>
 
-            <!-- créé par -->
+            <!-- cree par -->
             <div class="form-row">
                 <label for="created_by">
-                    <span>Créé par</span>
+                    <span>Cree par</span>
                 </label>
                 <input
                     type="text"
@@ -212,9 +219,12 @@ $errors      = $errors      ?? [];
                     class="field-input"
                     maxlength="100"
                     value="<?= htmlspecialchars($createdBy) ?>"
-                    placeholder="Nom de l’admin ou du modérateur"
+                    placeholder="Nom de l'admin ou du moderateur"
                 >
-                <div class="hint">Laisser vide pour utiliser la valeur par défaut (par ex. “Admin”).</div>
+                <div class="hint">Laisser vide pour utiliser la valeur par defaut (par ex. Admin).</div>
+                <div class="error-text" id="createdByError" style="<?= empty($errors['created_by']) ? '' : 'display:block;' ?>">
+                    <?= htmlspecialchars($errors['created_by'] ?? '') ?>
+                </div>
             </div>
 
             <!-- description -->
@@ -227,20 +237,23 @@ $errors      = $errors      ?? [];
                     name="description"
                     class="field-textarea"
                     rows="4"
-                    placeholder="Décrivez brièvement le rôle de ce forum…"
+                    placeholder="Decrivez brievement le role de ce forum"
                 ><?= htmlspecialchars($description) ?></textarea>
                 <div class="hint">
-                    S’affichera sur la page du forum pour guider les utilisateurs.
+                    S'affichera sur la page du forum pour guider les utilisateurs.
+                </div>
+                <div class="error-text" id="descriptionError" style="<?= empty($errors['description']) ? '' : 'display:block;' ?>">
+                    <?= htmlspecialchars($errors['description'] ?? '') ?>
                 </div>
             </div>
 
             <div class="form-footer">
                 <a href="admin.php?action=forums" class="btn-secondary">
-                    ← Retour à la liste
+                    ← Retour a la liste
                 </a>
 
                 <button type="submit" class="btn-primary-pill" id="submitBtn">
-                    <span class="ri-check-line"></span> Créer le forum
+                    Creer le forum
                 </button>
             </div>
         </form>
@@ -248,15 +261,24 @@ $errors      = $errors      ?? [];
 </div>
 
 <script>
-// Validation dynamique du titre
+// Validation dynamique du formulaire de creation forum (admin)
 document.addEventListener('DOMContentLoaded', () => {
     const titleInput   = document.getElementById('title');
     const titleError   = document.getElementById('titleError');
     const titleCounter = document.getElementById('titleCounter');
     const form         = document.getElementById('forumCreateForm');
     const submitBtn    = document.getElementById('submitBtn');
+    const description  = document.getElementById('description');
+    const descriptionError = document.getElementById('descriptionError');
+    const createdBy    = document.getElementById('created_by');
+    const createdByError = document.getElementById('createdByError');
 
     if (!titleInput) return;
+
+    const showError = (el, message) => {
+        el.textContent = message;
+        el.style.display = message ? 'block' : 'none';
+    };
 
     const validateTitle = () => {
         const val = titleInput.value.trim();
@@ -267,23 +289,53 @@ document.addEventListener('DOMContentLoaded', () => {
         if (len === 0) {
             message = 'Le titre est obligatoire.';
         } else if (len < 3) {
-            message = 'Le titre doit contenir au moins 3 caractères.';
+            message = 'Le titre doit contenir au moins 3 caracteres.';
+        } else if (len > 80) {
+            message = 'Le titre ne doit pas depasser 80 caracteres.';
         }
 
-        titleError.textContent = message;
-        const ok = message === '';
-        if (submitBtn) submitBtn.disabled = !ok;
-        return ok;
+        showError(titleError, message);
+        return message === '';
+    };
+
+    const validateDescription = () => {
+        const val = description.value.trim();
+        if (val.length > 500) {
+            showError(descriptionError, 'La description ne doit pas depasser 500 caracteres.');
+            return false;
+        }
+        showError(descriptionError, '');
+        return true;
+    };
+
+    const validateCreatedBy = () => {
+        const val = createdBy.value.trim();
+        if (val.length > 50) {
+            showError(createdByError, 'Le nom du createur ne doit pas depasser 50 caracteres.');
+            return false;
+        }
+        showError(createdByError, '');
+        return true;
     };
 
     titleInput.addEventListener('input', validateTitle);
+    description.addEventListener('input', validateDescription);
+    createdBy.addEventListener('input', validateCreatedBy);
     validateTitle();
+    validateDescription();
+    validateCreatedBy();
 
     form.addEventListener('submit', (e) => {
-        if (!validateTitle()) {
+        let ok = true;
+        if (!validateTitle()) ok = false;
+        if (!validateDescription()) ok = false;
+        if (!validateCreatedBy()) ok = false;
+
+        if (!ok) {
             e.preventDefault();
-            titleInput.focus();
+            if (submitBtn) submitBtn.disabled = false;
         }
     });
 });
 </script>
+

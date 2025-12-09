@@ -204,8 +204,8 @@
     };
     if (subtitle) subtitle.textContent = subtitles[ctx] || subtitles.default;
 
-    // URL de base (vient de PHP si défini, sinon /mindarena_forum)
-    const BASE_URL = "<?= defined('BASE_URL') ? BASE_URL : '/mindarena_forum' ?>";
+    // URL de base (vient de PHP si défini)
+    const BASE_URL = "<?= defined('BASE_URL') ? BASE_URL : '' ?>";
 
     // ===== Mémoire de conversation =====
     const conversation = []; // {role: 'user'|'assistant', content: '...'}
@@ -481,3 +481,4 @@
     }
 })();
 </script>
+

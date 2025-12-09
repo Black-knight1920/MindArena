@@ -10,8 +10,9 @@ class ReportController
     {
         $this->pdo = $pdo;
 
-        require_once __DIR__ . '/../models/Report.php';
-        require_once __DIR__ . '/../services/NotificationService.php';
+require_once __DIR__ . '/../Models/Report.php';
+        require_once __DIR__ . '/../Services/NotificationService.php';
+        require_once __DIR__ . '/../Services/Csrf.php';
 
         $this->reportModel         = new Report($pdo);
         $this->notificationService = new NotificationService($pdo);
@@ -23,6 +24,17 @@ class ReportController
      */
     public function addFront(): void
     {
+                require_once __DIR__ . '/../Services/Csrf.php';
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!Csrf::check($_POST['_csrf'] ?? '')) {
+                if (session_status() === PHP_SESSION_NONE) session_start();
+                $_SESSION['_flash'][] = ['type' => 'error', 'message' => 'Session expirAc, merci de rAessayer.'];
+                header('Location: index.php?action=forums');
+                exit;
+            }
+        }
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $type      = $_POST['target_type'] ?? '';
             $targetId  = (int)($_POST['target_id'] ?? 0);
@@ -55,8 +67,8 @@ class ReportController
 
                 // Notification admin avec infos complètes
                 require_once __DIR__ . '/../config/constants.php';
-                require_once __DIR__ . '/../models/Forum.php';
-                require_once __DIR__ . '/../models/Publication.php';
+                require_once __DIR__ . '/../Models/Forum.php';
+                require_once __DIR__ . '/../Models/Publication.php';
                 
                 $baseUrl = defined('BASE_URL') ? BASE_URL : '';
                 $forumModel = new Forum($this->pdo);
@@ -96,6 +108,6 @@ class ReportController
         }
 
         // GET : afficher le formulaire de signalement
-        include __DIR__ . '/../views/front/report.php';
+        include VIEW_PATH . '/front/report.php';
     }
 }

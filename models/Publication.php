@@ -100,23 +100,31 @@ class Publication {
     }
 
     public function create($forum_id, $author, $content) {
-        $stmt = $this->pdo->prepare("
-            INSERT INTO publications (forum_id, author, content, created_at)
-            VALUES (?, ?, ?, NOW())
-        ");
-        // Store 'Anonyme' if author is empty/null
-        $authorValue = !empty(trim($author)) ? $author : 'Anonyme';
+        // Normalize author
+        $authorTrim = trim((string)$author);
+        $authorValue = $authorTrim === '' ? 'Anonyme' : $authorTrim;
+
+        // Ensure a user_stats row exists for this author so FK won't fail
+        $this->ensureUserStatsExists($authorValue);
+
+        $stmt = $this->pdo->prepare(
+            "INSERT INTO publications (forum_id, author, content, created_at) VALUES (?, ?, ?, NOW())"
+        );
+
         return $stmt->execute([$forum_id, $authorValue, $content]);
     }
 
     public function update($id, $forum_id, $author, $content) {
-        $stmt = $this->pdo->prepare("
-            UPDATE publications
-            SET forum_id=?, author=?, content=?
-            WHERE id=?
-        ");
-        // Store 'Anonyme' if author is empty/null
-        $authorValue = !empty(trim($author)) ? $author : 'Anonyme';
+        // Normalize author
+        $authorTrim = trim((string)$author);
+        $authorValue = $authorTrim === '' ? 'Anonyme' : $authorTrim;
+
+        // Ensure a user_stats row exists for this author so FK won't fail
+        $this->ensureUserStatsExists($authorValue);
+
+        $stmt = $this->pdo->prepare(
+            "UPDATE publications SET forum_id=?, author=?, content=? WHERE id=?"
+        );
         return $stmt->execute([$forum_id, $authorValue, $content, $id]);
     }
 
@@ -151,9 +159,9 @@ class Publication {
                 f.created_by AS forum_created_by,
                 f.created_at AS forum_created_at,
                 COUNT(DISTINCT r.id) AS reports_count,
-                us.reputation AS author_reputation,
-                us.forums_count AS author_forums_count,
-                us.publications_count AS author_publications_count
+                COALESCE(us.reputation, 0) AS author_reputation,
+                COALESCE(us.forums_count, 0) AS author_forums_count,
+                COALESCE(us.publications_count, 0) AS author_publications_count
             FROM publications p
             LEFT JOIN forums f ON f.id = p.forum_id
             LEFT JOIN reports r ON r.publication_id = p.id AND r.target_type = 'publication'
@@ -182,9 +190,9 @@ class Publication {
                 f.created_by AS forum_created_by,
                 f.created_at AS forum_created_at,
                 COUNT(DISTINCT r.id) AS reports_count,
-                us.reputation AS author_reputation,
-                us.forums_count AS author_forums_count,
-                us.publications_count AS author_publications_count,
+                COALESCE(us.reputation, 0) AS author_reputation,
+                COALESCE(us.forums_count, 0) AS author_forums_count,
+                COALESCE(us.publications_count, 0) AS author_publications_count,
                 (SELECT COUNT(*) 
                  FROM publications p2 
                  WHERE p2.author = p.author) AS author_total_publications,
@@ -218,9 +226,9 @@ class Publication {
                 f.created_by AS forum_created_by,
                 f.created_at AS forum_created_at,
                 COUNT(DISTINCT r.id) AS reports_count,
-                us.reputation AS author_reputation,
-                us.forums_count AS author_forums_count,
-                us.publications_count AS author_publications_count
+                COALESCE(us.reputation, 0) AS author_reputation,
+                COALESCE(us.forums_count, 0) AS author_forums_count,
+                COALESCE(us.publications_count, 0) AS author_publications_count
             FROM publications p
             INNER JOIN forums f ON f.id = p.forum_id
             LEFT JOIN reports r ON r.publication_id = p.id AND r.target_type = 'publication'
@@ -261,5 +269,23 @@ class Publication {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 }
+
+    /**
+     * Ensure a minimal user_stats row exists for a username.
+     * This avoids FK insertion errors when publications/forums reference authors/creators.
+     */
+    private function ensureUserStatsExists(string $username): void
+    {
+        if ($username === '' || $username === null) {
+            return;
+        }
+
+        $sql = "INSERT INTO user_stats (username, reputation, forums_count, publications_count, created_at, updated_at)
+                VALUES (:u, 0, 0, 0, NOW(), NOW())
+                ON DUPLICATE KEY UPDATE username = username";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':u' => $username]);
+    }
 
 }
