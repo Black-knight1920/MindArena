@@ -1,0 +1,33 @@
+<?php
+/**
+ * reCAPTCHA Configuration File
+ * 
+ * To use reCAPTCHA:
+ * 1. Copy this file to recaptcha_config.php (remove .example)
+ * 2. Get your keys from https://www.google.com/recaptcha/admin
+ * 3. Replace the placeholder values below with your actual keys
+ * 
+ * For localhost/testing, you can use Google's test keys:
+ * Site Key: 6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI
+ * Secret Key: 6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe
+ * 
+ * Note: Test keys always pass verification but show a warning
+ */
+
+// Your reCAPTCHA Site Key (public key - used in frontend)
+$RECAPTCHA_SITE_KEY = 'YOUR_SITE_KEY_HERE';
+
+// Your reCAPTCHA Secret Key (private key - used in backend)
+$RECAPTCHA_SECRET_KEY = 'YOUR_SECRET_KEY_HERE';
+
+// Optional: Define constants for use in CaptchaService
+if (!defined('RECAPTCHA_SITE_KEY')) {
+    define('RECAPTCHA_SITE_KEY', $RECAPTCHA_SITE_KEY);
+}
+
+if (!defined('RECAPTCHA_SECRET_KEY')) {
+    define('RECAPTCHA_SECRET_KEY', $RECAPTCHA_SECRET_KEY);
+}
+
+?>
+
