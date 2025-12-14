@@ -1,120 +1,94 @@
 <?php
 
-require_once "database.php"; // brings $conn variable
+require_once __DIR__ . '/database.php'; // brings $conn variable
 
 class User {
 
     private $conn;
 
     public function __construct() {
+        // use your connection
         global $conn;
         $this->conn = $conn;
     }
 
-    /* ============================
-       USER LOGIN
-       ============================ */
-    public function loginUser($username, $password) {
-
+    public function loginUser($usernameOrEmail, $passwordHash, $passwordPlain = '') {
+        // Accept either hashed (md5) or legacy plain passwords; allow login via name or email
         $stmt = $this->conn->prepare(
-            "SELECT * FROM user WHERE name = :name"
+            "SELECT * FROM user WHERE (name = :id OR email = :id) AND (mdp = :mdp OR mdp = :plain)"
         );
-        $stmt->execute(array(":name" => $username));
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$user) {
-            return false;
-        }
-
-        // banned?
-        if (isset($user['banned']) && $user['banned'] == 1) {
-            return false;
-        }
-
-        // MD5 password match
-        return (md5($password) === $user['mdp']);
+        $stmt->execute(array(":id" => $usernameOrEmail, ":mdp" => $passwordHash, ":plain" => $passwordPlain));
+        return $stmt->rowCount() > 0;
     }
 
-
-    /* ============================
-       ADMIN LOGIN
-       ============================ */
-    public function loginAdmin($username, $password) {
-
+    public function loginAdmin($username, $passwordHash, $passwordPlain = '') {
         $stmt = $this->conn->prepare(
-            "SELECT * FROM user 
-             WHERE name = :name 
-             AND mdp = :mdp
-             AND admin = 1"
+            "SELECT * FROM admin WHERE name = :name AND (mdpa = :mdp OR mdpa = :plain)"
         );
-
-        $stmt->execute(array(
-            ":name" => $username,
-            ":mdp"  => md5($password)
-        ));
-
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt->execute(array(":name" => $username, ":mdp" => $passwordHash, ":plain" => $passwordPlain));
+        return $stmt->rowCount() > 0;
     }
 
-
-    /* ============================
-       SIGNUP (PHP 5.3 SAFE)
-       ============================ */
     public function signup($name, $email, $password, $birth, $dateI) {
+    // First, insert the user into the user table
+    $stmt = $this->conn->prepare(
+        "INSERT INTO user (name, email, mdp, `date-naissance`, `date-inscrit`)
+         VALUES (:name, :email, :mdp, :dateN, :dateI)"
+    );
+    $stmt->execute(array(
+        ":name" => $name,
+        ":email" => $email,
+        ":mdp"   => $password,
+        ":dateN" => $birth,
+        ":dateI" => $dateI
+    ));
 
-        $stmt = $this->conn->prepare(
-            "INSERT INTO user 
-            (name, email, mdp, `date-naissance`, `date-inscrit`, donation, banned, profile_picture, admin)
-            VALUES 
-            (:name, :email, :mdp, :birth, :dateI, 0, 0, NULL, 0)"
-        );
+    // After the user is created, get the last inserted user ID
+    $userId = $this->conn->lastInsertId();
 
-        $stmt->execute(array(
-            ":name"  => $name,
-            ":email" => $email,
-            ":mdp"   => $password,
-            ":birth" => $birth,
-            ":dateI" => $dateI
-        ));
+    // Now insert the profile data into the profile table
+    $stmtProfile = $this->conn->prepare(
+        "INSERT INTO profile (user_id, name, email) 
+         VALUES (:user_id, :name, :email)"
+    );
+    return $stmtProfile->execute(array(
+        ":user_id" => $userId,
+        ":name" => $name,
+        ":email" => $email
+    ));
+}
 
-        // Get last inserted user's ID
-        $userId = $this->conn->lastInsertId();
-
-        // Insert into profile table
-        $stmt2 = $this->conn->prepare(
-            "INSERT INTO profile (user_id, name, email)
-             VALUES (:id, :name, :email)"
-        );
-
-        return $stmt2->execute(array(
-            ":id"    => $userId,
-            ":name"  => $name,
-            ":email" => $email
-        ));
+    public function exists($username){
+    $stmt = $this->conn->prepare("SELECT * FROM user WHERE name = :name");
+    $stmt->execute(array(':name' => $username));
+    return $stmt->rowCount() > 0;
     }
 
-
-    /* ============================
-       CHECK IF USER EXISTS
-       ============================ */
-    public function exists($username) {
-        $stmt = $this->conn->prepare(
-            "SELECT id FROM user WHERE name = :name"
-        );
-        $stmt->execute(array(':name' => $username));
-        return ($stmt->rowCount() > 0);
+    public function emailExists(string $email): bool {
+        $stmt = $this->conn->prepare("SELECT 1 FROM user WHERE email = :email LIMIT 1");
+        $stmt->execute([':email' => $email]);
+        return (bool)$stmt->fetchColumn();
     }
 
-
-    /* ============================
-       GET USER BY NAME
-       ============================ */
     public function getUserByName($username) {
-        $stmt = $this->conn->prepare(
-            "SELECT * FROM user WHERE name = :name"
-        );
-        $stmt->execute(array(":name" => $username));
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+    $stmt = $this->conn->prepare("SELECT * FROM user WHERE name = :name");
+    $stmt->execute(array(":name" => $username));
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+    public function countUsers(): int {
+        $stmt = $this->conn->query("SELECT COUNT(*) FROM user");
+        return (int) $stmt->fetchColumn();
     }
+
+    /**
+     * Temporary ranking placeholder to avoid missing method errors.
+     * Returns an empty array; update with real logic if needed.
+     */
+    public function getFakeRanking(): array {
+        return [];
+    }
+
+
 }
 ?>

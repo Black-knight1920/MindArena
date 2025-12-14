@@ -1,145 +1,722 @@
 <?php
-// Completely disable error display
-error_reporting(0);
-ini_set('display_errors', 0);
-ini_set('display_startup_errors', 0);
-ini_set('log_errors', 1);
 
-require_once __DIR__ . '/../models/AdminModel.php';
+require_once __DIR__ . '/../Models/Forum.php';
+require_once __DIR__ . '/../Models/Publication.php';
+require_once __DIR__ . '/../Models/Report.php';
+require_once __DIR__ . '/../Models/Notification.php';
+require_once __DIR__ . '/../Models/User.php';
 
-class AdminController {
-    
-    public function updateProfile() {
-        // Check if request is AJAX
-        if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
-            http_response_code(403);
-            echo json_encode(array('success' => false, 'message' => 'Invalid request'));
-            exit();
-        }
+require_once __DIR__ . '/../Services/NotificationService.php';
+require_once __DIR__ . '/../Services/ReputationService.php';
+require_once __DIR__ . '/../Services/UserStatsService.php';
+// Helpers removed: inline validation used instead of external helper
 
-        // Validate admin session
-        if (session_id() === '') {
-            session_start();
-        }
-        
-        if (!isset($_SESSION["admin"])) {
-            http_response_code(401);
-            echo json_encode(array('success' => false, 'message' => 'Unauthorized'));
-            exit();
-        }
+class AdminController
+{
+    private $db;
+    private $forumModel;
+    private $publicationModel;
+    private $reportModel;
+    private $notificationModel;
+    private $userModel;
 
-        if ($_SERVER["REQUEST_METHOD"] !== "POST") {
-            http_response_code(405);
-            echo json_encode(array('success' => false, 'message' => 'Method not allowed'));
-            exit();
-        }
+    private $notificationService;
+    private $reputationService;
 
-        // Get current admin username from session
-        $currentUsername = $_SESSION["admin"];
+    public function __construct(PDO $db)
+    {
+        $this->db = $db;
 
-        // Sanitize and validate input
-        $newUsername = filter_var(trim($_POST['username']), FILTER_SANITIZE_STRING);
-        $email = isset($_POST['email']) ? filter_var(trim($_POST['email']), FILTER_SANITIZE_EMAIL) : '';
-        $password = isset($_POST['password']) && !empty($_POST['password']) ? trim($_POST['password']) : null;
+        $this->forumModel        = new Forum($db);
+        $this->publicationModel  = new Publication($db);
+        $this->reportModel       = new Report($db);
+        $this->notificationModel = new Notification($db);
+        $this->userModel         = new User($db);
 
-        // Validation
-        if (empty($newUsername)) {
-            echo json_encode(array('success' => false, 'message' => 'Username is required'));
-            exit();
-        }
-
-        // Validate email format only if email is provided (email column may not exist)
-        if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            echo json_encode(array('success' => false, 'message' => 'Invalid email format'));
-            exit();
-        }
-
-        // Validate password if provided
-        if ($password !== null && strlen($password) < 6) {
-            echo json_encode(array('success' => false, 'message' => 'Password must be at least 6 characters'));
-            exit();
-        }
-
-        // Validate username length
-        if (strlen($newUsername) < 3) {
-            echo json_encode(array('success' => false, 'message' => 'Username must be at least 3 characters'));
-            exit();
-        }
-
-        $model = new AdminModel();
-        $result = $model->updateAdmin($currentUsername, $newUsername, $email, $password);
-
-        if ($result) {
-            // Update session with new username
-            $_SESSION["admin"] = $newUsername;
-            
-            echo json_encode(array(
-                'success' => true, 
-                'message' => 'Profile updated successfully!',
-                'newUsername' => $newUsername
-            ));
-        } else {
-            echo json_encode(array('success' => false, 'message' => 'Failed to update profile. Please try again.'));
-        }
-        exit();
+        $this->notificationService = new NotificationService($db);
+        $this->reputationService   = new ReputationService();
     }
 
-    public function getProfile() {
-        // Validate admin session
-        if (session_id() === '') {
-            session_start();
+    private function render($view, $title, $active, $data = [])
+    {
+        // Ensure BASE_URL is defined
+        if (!defined('BASE_URL')) {
+            require_once __DIR__ . '/../config/constants.php';
         }
-        
-        if (!isset($_SESSION["admin"])) {
-            http_response_code(401);
-            header('Content-Type: application/json');
-            echo json_encode(array('success' => false, 'message' => 'Unauthorized'));
-            exit();
+
+        $unread         = $this->notificationService->countUnread();
+        $notifications  = $this->notificationService->getLatest();
+
+        extract($data);
+
+        $pageTitle = $title;
+        $viewFile  = VIEW_PATH . '/admin/' . $view . '.php';
+
+        if (!file_exists($viewFile)) {
+            $viewFile = VIEW_PATH . '/admin/errorView.php';
         }
+
+        // Make viewFile available to the layout
+        $data['viewFile'] = $viewFile;
+        $data['active'] = $active;
+        $data['unread'] = $unread;
+        $data['notifications'] = $notifications;
+        $data['pageTitle'] = $pageTitle;
+        extract($data);
+
+        include VIEW_PATH . '/admin/layout/layout.php';
+    }
+
+    private function sortForumsAdmin(array $items, string $sort, string $dir): array
+    {
+        $direction = strtolower($dir) === 'asc' ? 1 : -1;
+        $sort = in_array($sort, ['date', 'title', 'author'], true) ? $sort : 'date';
+        usort($items, function ($a, $b) use ($sort, $direction) {
+            switch ($sort) {
+                case 'title':
+                    $aval = strtolower($a['title'] ?? '');
+                    $bval = strtolower($b['title'] ?? '');
+                    break;
+                case 'author':
+                    $aval = strtolower($a['created_by'] ?? '');
+                    $bval = strtolower($b['created_by'] ?? '');
+                    break;
+                case 'date':
+                default:
+                    $aval = strtotime($a['created_at'] ?? $a['date'] ?? 'now');
+                    $bval = strtotime($b['created_at'] ?? $b['date'] ?? 'now');
+                    break;
+            }
+            if ($aval == $bval) return 0;
+            return ($aval < $bval ? -1 : 1) * $direction;
+        });
+        return $items;
+    }
+
+    private function sortPublicationsAdmin(array $items, string $sort, string $dir): array
+    {
+        $direction = strtolower($dir) === 'asc' ? 1 : -1;
+        $sort = in_array($sort, ['date', 'title', 'author'], true) ? $sort : 'date';
+        usort($items, function ($a, $b) use ($sort, $direction) {
+            switch ($sort) {
+                case 'title':
+                    $aval = strtolower($a['title'] ?? '');
+                    $bval = strtolower($b['title'] ?? '');
+                    break;
+                case 'author':
+                    $aval = strtolower($a['author'] ?? '');
+                    $bval = strtolower($b['author'] ?? '');
+                    break;
+                case 'date':
+                default:
+                    $aval = strtotime($a['created_at'] ?? $a['date'] ?? 'now');
+                    $bval = strtotime($b['created_at'] ?? $b['date'] ?? 'now');
+                    break;
+            }
+            if ($aval == $bval) return 0;
+            return ($aval < $bval ? -1 : 1) * $direction;
+        });
+        return $items;
+    }
+
+    private function sortReportsAdmin(array $items, string $sort, string $dir): array
+    {
+        $direction = strtolower($dir) === 'asc' ? 1 : -1;
+        $sort = in_array($sort, ['date', 'status', 'type'], true) ? $sort : 'date';
+        usort($items, function ($a, $b) use ($sort, $direction) {
+            switch ($sort) {
+                case 'status':
+                    $aval = strtolower($a['status'] ?? '');
+                    $bval = strtolower($b['status'] ?? '');
+                    break;
+                case 'type':
+                    $aval = strtolower($a['target_type'] ?? '');
+                    $bval = strtolower($b['target_type'] ?? '');
+                    break;
+                case 'date':
+                default:
+                    $aval = strtotime($a['created_at'] ?? $a['date'] ?? 'now');
+                    $bval = strtotime($b['created_at'] ?? $b['date'] ?? 'now');
+                    break;
+            }
+            if ($aval == $bval) return 0;
+            return ($aval < $bval ? -1 : 1) * $direction;
+        });
+        return $items;
+    }
+
+    /* --------------------- DASHBOARD --------------------- */
+    public function dashboard()
+    {
+        $forumsCount       = $this->forumModel->countForums();
+        $publicationsCount = $this->publicationModel->countPublications();
+        $reportsTotal      = $this->reportModel->count();
+        $reportsPending    = $this->reportModel->countPending();
+
+        $userRanking       = $this->userModel->getFakeRanking();
+        $usersCount        = $this->userModel->countUsers();
+
+        // User table metrics (integrated from MindArena-feature-user dashboard)
+        $totalRegisteredUsers = 0;
+        $newUsers             = 0;
+        $activeDonors         = 0;
+        $recentUsers          = [];
 
         try {
-            $username = $_SESSION["admin"];
-            
-            if (empty($username)) {
-                header('Content-Type: application/json');
-                echo json_encode(array('success' => false, 'message' => 'Admin username is empty'));
-                exit();
-            }
-            
-            $model = new AdminModel();
-            $admin = $model->getAdminByName($username);
+            $totalRegisteredUsers = (int)$this->db->query("SELECT COUNT(*) FROM user")->fetchColumn();
+            $newUsers = (int)$this->db->query("SELECT COUNT(*) FROM user WHERE `date-inscrit` >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)")->fetchColumn();
+            $activeDonors = (int)$this->db->query("SELECT COUNT(*) FROM user WHERE donation >= 1")->fetchColumn();
 
-            if ($admin && is_array($admin)) {
-                // Don't send password hash to frontend
-                if (isset($admin['mdpa'])) {
-                    unset($admin['mdpa']);
-                }
-                // Ensure email field exists
-                if (!isset($admin['email'])) {
-                    $admin['email'] = '';
-                }
-                // Ensure name field exists
-                if (!isset($admin['name'])) {
-                    $admin['name'] = $username;
-                }
-                header('Content-Type: application/json');
-                echo json_encode(array('success' => true, 'data' => $admin));
-            } else {
-                // Fallback: return session data if admin not found in DB
-                header('Content-Type: application/json');
-                echo json_encode(array(
-                    'success' => true, 
-                    'data' => array(
-                        'name' => $username,
-                        'email' => ''
-                    )
-                ));
+            $recentStmt = $this->db->query("SELECT name, `date-inscrit` AS signup_date FROM user ORDER BY id DESC LIMIT 5");
+            if ($recentStmt) {
+                $recentUsers = $recentStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
             }
         } catch (Exception $e) {
-            error_log("Error in getProfile: " . $e->getMessage());
-            header('Content-Type: application/json');
-            echo json_encode(array('success' => false, 'message' => 'Error loading profile: ' . $e->getMessage()));
+            // Keep defaults if query fails
         }
-        exit();
+
+        $this->render("dashboard", "Dashboard", "dashboard", [
+            "totalForums"       => $forumsCount,
+            "totalPublications" => $publicationsCount,
+            "totalReports"      => $reportsTotal,
+            "pendingReports"    => $reportsPending,
+            "userRanking"       => $userRanking,
+            "usersCount"        => $usersCount,
+            "totalRegisteredUsers" => $totalRegisteredUsers,
+            "newUsers"             => $newUsers,
+            "activeDonors"         => $activeDonors,
+            "recentUsers"          => $recentUsers,
+        ]);
+    }
+
+    /* --------------------- FORUMS --------------------- */
+    public function forumList()
+    {
+        $sort = isset($_GET['sort']) ? strtolower($_GET['sort']) : 'date';
+        $dir  = isset($_GET['dir']) ? strtolower($_GET['dir']) : 'desc';
+
+        $forums = $this->forumModel->getAllWithStats();
+        $forums = $this->sortForumsAdmin($forums, $sort, $dir);
+
+        $this->render("forumList", "Forums", "forums", [
+            "forums" => $forums,
+            "sort" => $sort,
+            "dir" => $dir,
+        ]);
+    }
+
+    /* --------------------- REPORTS --------------------- */
+    public function reportList()
+    {
+        // Utiliser getAllWithFullDetails() pour avoir toutes les infos avec jointures complètes
+        $sort = isset($_GET['sort']) ? strtolower($_GET['sort']) : 'date';
+        $dir  = isset($_GET['dir']) ? strtolower($_GET['dir']) : 'desc';
+
+        $reports = $this->reportModel->getAllWithFullDetails();
+        $reports = $this->sortReportsAdmin($reports, $sort, $dir);
+        $totalReports = $this->reportModel->count();
+        $pendingReports = $this->reportModel->countPending();
+
+        $this->render("reportList", "Signalements", "reports", [
+            "reports" => $reports,
+            "totalReports" => $totalReports,
+            "pendingReports" => $pendingReports,
+            "sort" => $sort,
+            "dir" => $dir,
+        ]);
+    }
+
+    public function updateReportStatus()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: admin.php?action=reports');
+            exit;
+        }
+
+        $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+        $status = $_POST['status'] ?? '';
+
+        if ($id > 0 && in_array($status, ['pending', 'seen', 'resolved'], true)) {
+            try {
+                $this->reportModel->updateStatus($id, $status);
+                $_SESSION['_flash'][] = ['type' => 'success', 'message' => 'Statut du signalement mis à jour.'];
+            } catch (Exception $e) {
+                $_SESSION['_flash'][] = ['type' => 'error', 'message' => 'Erreur lors de la mise à jour.'];
+            }
+        }
+
+        header('Location: admin.php?action=reports');
+        exit;
+    }
+
+    /**
+     * Supprime un signalement (attendu en POST).
+     */
+    public function deleteReport()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: admin.php?action=reports');
+            exit;
+        }
+
+        $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+        if ($id > 0) {
+            try {
+                $this->reportModel->delete($id);
+                // Optionnel : créer une notification système
+                $this->notificationService->create(
+                    'system',
+                    'Signalement supprimé',
+                    "Le signalement #{$id} a été supprimé par un administrateur.",
+                    'admin.php?action=reports'
+                );
+                $_SESSION['_flash'][] = ['type' => 'success', 'message' => 'Signalement supprimé.'];
+            } catch (Exception $e) {
+                $_SESSION['_flash'][] = ['type' => 'error', 'message' => 'Erreur lors de la suppression.'];
+            }
+        }
+
+        header('Location: admin.php?action=reports');
+        exit;
+    }
+
+    /* --------------------- FORUM CRUD --------------------- */
+    public function forumAdd()
+    {
+        $errors = [];
+        $title = '';
+        $description = '';
+        $createdBy = '';
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // sanitize inputs
+            $title = trim(strip_tags($_POST['title'] ?? ''));
+            $description = trim(strip_tags($_POST['description'] ?? ''));
+            $createdBy = strtolower(preg_replace('/\s+/', ' ', trim($_POST['created_by'] ?? '')));
+
+            // Validate title
+            if ($title === '') {
+                $errors['title'] = 'Le titre est obligatoire.';
+            } else {
+                $lenErrors = [];
+                $len = mb_strlen($title);
+                if ($len < 3) $lenErrors[] = 'Le titre doit contenir au moins 3 caractères.';
+                if ($len > 80) $lenErrors[] = 'Le titre ne doit pas dépasser 80 caractères.';
+                if ($lenErrors) $errors['title'] = implode(' ', $lenErrors);
+            }
+
+            // Description length (max)
+            $descErr = [];
+            $dlen = mb_strlen($description);
+            if ($dlen > 500) $descErr[] = 'La description ne doit pas dépasser 500 caractères.';
+            if ($descErr) $errors['description'] = implode(' ', $descErr);
+
+            if ($createdBy === '') {
+                $createdBy = 'Admin';
+            } else {
+                $cbErr = [];
+                $cblen = mb_strlen($createdBy);
+                if ($cblen > 50) $cbErr[] = 'Le nom du créateur ne doit pas dépasser 50 caractères.';
+                if ($cbErr) $errors['created_by'] = implode(' ', $cbErr);
+            }
+
+            if (empty($errors)) {
+                try {
+                    if ($this->forumModel->create($title, $description, $createdBy)) {
+                        $this->notificationService->create(
+                            'forum',
+                            'Nouveau forum créé',
+                            "Le forum \"{$title}\" a été créé.",
+                            'admin.php?action=forums'
+                        );
+                        $_SESSION['_flash'][] = ['type' => 'success', 'message' => 'Forum créé avec succès.'];
+                        // Stay on the same page (forum-add) after creation
+                        $title = '';
+                        $description = '';
+                        $createdBy = '';
+                    } else {
+                        $errors['general'] = 'Erreur lors de la création du forum.';
+                    }
+                } catch (Exception $e) {
+                    $errors['general'] = 'Erreur lors de la création du forum.';
+                }
+            }
+        }
+
+        $this->render("forumAdd", "Ajouter un forum", "forums", [
+            "errors" => $errors,
+            "title" => $title,
+            "description" => $description,
+            "created_by" => $createdBy
+        ]);
+    }
+
+   public function forumEdit()
+   {
+       $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+       if ($id <= 0) {
+           header('Location: admin.php?action=forums');
+           exit;
+       }
+
+       // Utiliser getByIdWithStats() pour avoir les statistiques avec jointure
+       $forum = $this->forumModel->getByIdWithStats($id);
+       if (!$forum) {
+           header('Location: admin.php?action=forums');
+           exit;
+       }
+
+        // Only allow edit if reports exist
+        $reports = $this->reportModel->countByTarget('forum', $id);
+        if ($reports <= 0) {
+            $_SESSION['_flash'][] = ['type' => 'error', 'message' => 'Aucun report sur ce forum. Edition interdite.'];
+            header('Location: admin.php?action=forums');
+            exit;
+        }
+
+        $errors = [];
+        $title = $forum['title'] ?? '';
+        $description = $forum['description'] ?? '';
+        $createdBy = $forum['created_by'] ?? '';
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // sanitize inputs
+            $title = trim(strip_tags($_POST['title'] ?? ''));
+            $description = trim(strip_tags($_POST['description'] ?? ''));
+            $createdBy = strtolower(preg_replace('/\s+/', ' ', trim($_POST['created_by'] ?? '')));
+
+            // Validate title
+            if ($title === '') {
+                $errors['title'] = 'Le titre est obligatoire.';
+            } else {
+                $lenErrors = [];
+                $len = mb_strlen($title);
+                if ($len < 3) $lenErrors[] = 'Le titre doit contenir au moins 3 caractères.';
+                if ($len > 80) $lenErrors[] = 'Le titre ne doit pas dépasser 80 caractères.';
+                if ($lenErrors) $errors['title'] = implode(' ', $lenErrors);
+            }
+
+            // Description length (max)
+            $descErr = [];
+            $dlen = mb_strlen($description);
+            if ($dlen > 500) $descErr[] = 'La description ne doit pas dépasser 500 caractères.';
+            if ($descErr) $errors['description'] = implode(' ', $descErr);
+
+            $cbErr = [];
+            $cblen = mb_strlen($createdBy);
+            if ($cblen > 50) $cbErr[] = 'Le nom du créateur ne doit pas dépasser 50 caractères.';
+            if ($cbErr) $errors['created_by'] = implode(' ', $cbErr);
+
+            if (empty($errors)) {
+                try {
+                    if ($this->forumModel->update($id, $title, $description, $createdBy)) {
+                        $_SESSION['_flash'][] = ['type' => 'success', 'message' => 'Forum mis à jour.'];
+                        header('Location: admin.php?action=forums');
+                        exit;
+                    } else {
+                        $errors['general'] = 'Erreur lors de la mise à jour du forum.';
+                    }
+                } catch (Exception $e) {
+                    $errors['general'] = 'Erreur lors de la mise à jour du forum.';
+                }
+            }
+        }
+
+        $this->render("ForumEdit", "Modifier un forum", "forums", [
+            "errors" => $errors,
+            "forum" => $forum,
+            "title" => $title,
+            "description" => $description,
+            "created_by" => $createdBy
+        ]);
+    }
+
+    public function forumDelete()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: admin.php?action=forums');
+            exit;
+        }
+
+        $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+        if ($id > 0) {
+            $reports = $this->reportModel->countByTarget('forum', $id);
+            if ($reports <= 0) {
+                $_SESSION['_flash'][] = ['type' => 'error', 'message' => 'Suppression impossible : aucun signalement pour ce forum.'];
+                header('Location: admin.php?action=forums');
+                exit;
+            }
+
+            try {
+                $this->forumModel->delete($id);
+                $_SESSION['_flash'][] = ['type' => 'success', 'message' => 'Forum supprimé (après signalement).'];
+            } catch (Exception $e) {
+                $_SESSION['_flash'][] = ['type' => 'error', 'message' => 'Erreur lors de la suppression du forum.'];
+            }
+        }
+        header('Location: admin.php?action=forums');
+        exit;
+    }
+
+    /* --------------------- PUBLICATION CRUD --------------------- */
+    public function publicationAdd()
+    {
+        $errors = [];
+        $forum_id = isset($_GET['forum_id']) ? (int)$_GET['forum_id'] : 0;
+        $author = '';
+        $content = '';
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $forum_id = isset($_POST['forum_id']) ? (int)$_POST['forum_id'] : 0;
+            $author = strtolower(preg_replace('/\s+/', ' ', trim($_POST['author'] ?? '')));
+            $content = trim(strip_tags($_POST['content'] ?? ''));
+
+            if ($forum_id <= 0) {
+                $errors['forum_id'] = 'Forum invalide.';
+            }
+
+            if ($author !== '') {
+                $aErr = [];
+                if (mb_strlen($author) > 40) $aErr[] = 'Le nom de l\'auteur ne doit pas dépasser 40 caractères.';
+                if ($aErr) $errors['author'] = implode(' ', $aErr);
+            }
+
+            $cErr = [];
+            if ($content === '') {
+                $cErr[] = 'Le contenu est obligatoire.';
+            } else {
+                $clen = mb_strlen($content);
+                if ($clen < 10) $cErr[] = 'Le contenu doit contenir au moins 10 caractères.';
+                if ($clen > 1000) $cErr[] = 'Le contenu ne doit pas dépasser 1000 caractères.';
+            }
+            if ($cErr) $errors['content'] = implode(' ', $cErr);
+
+            if (empty($errors)) {
+                try {
+                    // Pass author as-is; model will convert empty string to NULL for anonymous posts
+                    $result = $this->publicationModel->create($forum_id, $author, $content);
+                    if ($result) {
+                        $_SESSION['_flash'][] = ['type' => 'success', 'message' => 'Publication créée.'];
+                        // Stay on the same forum's publication list after creation
+                        header("Location: admin.php?action=publications&forum_id=" . (int)$forum_id);
+                        exit;
+                    } else {
+                        $errors['general'] = 'Erreur lors de la création de la publication (create retourna false).';
+                    }
+                } catch (PDOException $e) {
+                    $errors['general'] = 'Erreur base de données : ' . htmlspecialchars($e->getMessage());
+                } catch (Exception $e) {
+                    $errors['general'] = 'Erreur : ' . htmlspecialchars($e->getMessage());
+                }
+            }
+        }
+
+        // Utiliser getAllWithStats() pour avoir les statistiques avec jointure
+        $forums = $this->forumModel->getAllWithStats();
+
+        $this->render("publicationAdd", "Ajouter une publication", "publications", [
+            "errors" => $errors,
+            "forums" => $forums,
+            "forum_id" => $forum_id,
+            "author" => $author,
+            "content" => $content
+        ]);
+    }
+
+    public function publicationEdit()
+    {
+        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        if ($id <= 0) {
+            header('Location: admin.php?action=publications');
+            exit;
+        }
+
+        // Utiliser getByIdWithForum() pour avoir les infos du forum avec jointure
+        $publication = $this->publicationModel->getByIdWithForum($id);
+        if (!$publication) {
+            header('Location: admin.php?action=publications');
+            exit;
+        }
+        $reports = $this->reportModel->countByTarget('publication', $id);
+        if ($reports <= 0) {
+            $_SESSION['_flash'][] = ['type' => 'error', 'message' => 'Aucun report sur cette publication. Edition interdite.'];
+            header('Location: admin.php?action=publications');
+            exit;
+        }
+
+        $errors = [];
+        $forum_id = $publication['forum_id'] ?? 0;
+        $author = $publication['author'] ?? '';
+        $content = $publication['content'] ?? '';
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $forum_id = isset($_POST['forum_id']) ? (int)$_POST['forum_id'] : 0;
+            $author = strtolower(preg_replace('/\s+/', ' ', trim($_POST['author'] ?? '')));
+            $content = trim(strip_tags($_POST['content'] ?? ''));
+
+            if ($forum_id <= 0) {
+                $errors['forum_id'] = 'Forum invalide.';
+            }
+
+            if ($author !== '') {
+                $aErr = [];
+                if (mb_strlen($author) > 40) $aErr[] = 'Le nom de l\'auteur ne doit pas dépasser 40 caractères.';
+                if ($aErr) $errors['author'] = implode(' ', $aErr);
+            }
+
+            $cErr = [];
+            if ($content === '') {
+                $cErr[] = 'Le contenu est obligatoire.';
+            } else {
+                $clen = mb_strlen($content);
+                if ($clen < 10) $cErr[] = 'Le contenu doit contenir au moins 10 caractères.';
+                if ($clen > 1000) $cErr[] = 'Le contenu ne doit pas dépasser 1000 caractères.';
+            }
+            if ($cErr) $errors['content'] = implode(' ', $cErr);
+
+            if (empty($errors)) {
+                try {
+                    // Pass author as-is; model will convert empty string to NULL for anonymous posts
+                    if ($this->publicationModel->update($id, $forum_id, $author, $content)) {
+                        $_SESSION['_flash'][] = ['type' => 'success', 'message' => 'Publication mise à jour.'];
+                        header("Location: admin.php?action=publications");
+                        exit;
+                    } else {
+                        $errors['general'] = 'Erreur lors de la mise à jour de la publication.';
+                    }
+                } catch (PDOException $e) {
+                    $errors['general'] = 'Erreur base de données : ' . htmlspecialchars($e->getMessage());
+                } catch (Exception $e) {
+                    $errors['general'] = 'Erreur : ' . htmlspecialchars($e->getMessage());
+                }
+            }
+        }
+
+        // Utiliser getAllWithStats() pour avoir les statistiques avec jointure
+        $forums = $this->forumModel->getAllWithStats();
+
+        $this->render("publicationEdit", "Modifier une publication", "publications", [
+            "errors" => $errors,
+            "publication" => $publication,
+            "forums" => $forums,
+            "forum_id" => $forum_id,
+            "author" => $author,
+            "content" => $content
+        ]);
+    }
+
+    public function publicationDelete()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: admin.php?action=publications');
+            exit;
+        }
+
+        $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+        if ($id > 0) {
+            $reports = $this->reportModel->countByTarget('publication', $id);
+            if ($reports <= 0) {
+                $_SESSION['_flash'][] = ['type' => 'error', 'message' => 'Suppression impossible : aucun signalement pour cette publication.'];
+                header('Location: admin.php?action=publications');
+                exit;
+            }
+
+            try {
+                $this->publicationModel->delete($id);
+                $_SESSION['_flash'][] = ['type' => 'success', 'message' => 'Publication supprimée (après signalement).'];
+            } catch (Exception $e) {
+                $_SESSION['_flash'][] = ['type' => 'error', 'message' => 'Erreur lors de la suppression.'];
+            }
+        }
+        header('Location: admin.php?action=publications');
+        exit;
+    }
+
+    /* --------------------- USER STATS --------------------- */
+    public function userStats()
+    {
+        require_once __DIR__ . '/../Services/UserStatsService.php';
+        $userStatsService = new UserStatsService($this->db);
+
+        $overview = $userStatsService->getGlobalOverview();
+        $topContributors = $userStatsService->getTopContributors(20);
+
+        $this->render("UserStats", "Statistiques utilisateurs", "user-stats", [
+            "overview" => $overview,
+            "topContributors" => $topContributors
+        ]);
+    }
+
+    /* --------------------- PUBLICATIONS (for admin) --------------------- */
+    public function publicationList()
+    {
+        // Optionnel: filtrer par forum_id si fourni
+        $forum_id = isset($_GET['forum_id']) ? (int)$_GET['forum_id'] : 0;
+        $sort = isset($_GET['sort']) ? strtolower($_GET['sort']) : 'date';
+        $dir  = isset($_GET['dir']) ? strtolower($_GET['dir']) : 'desc';
+        $forum = null;
+
+        if ($forum_id > 0) {
+            $forum = $this->forumModel->getById($forum_id);
+            if (!$forum) {
+                header('Location: admin.php?action=forums');
+                exit;
+            }
+            // Récupérer les publications pour ce forum spécifique (avec stats et reports)
+            if (method_exists($this->publicationModel, 'getByForumWithFullDetails')) {
+                $publications = $this->publicationModel->getByForumWithFullDetails($forum_id);
+            } else {
+                $publications = $this->publicationModel->getByForum($forum_id);
+            }
+        } else {
+            // Utiliser getAllWithFullDetails() pour avoir toutes les infos avec jointures complètes
+            $publications = $this->publicationModel->getAllWithFullDetails();
+        }
+
+        $publications = $this->sortPublicationsAdmin($publications, $sort, $dir);
+
+        $this->render("publicationList", "Publications", "publications", [
+            "publications" => $publications,
+            "forum" => $forum,
+            "forum_id" => $forum_id,
+            "sort" => $sort,
+            "dir" => $dir,
+        ]);
+    }
+
+    /* --------------------- ADMIN ACCOUNTS --------------------- */
+    public function adminAdd()
+    {
+        $error = '';
+        $success = '';
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $name = trim($_POST['name'] ?? '');
+            $password = trim($_POST['password'] ?? '');
+
+            if ($name === '' || $password === '') {
+                $error = 'Nom et mot de passe requis.';
+            } elseif (mb_strlen($name) < 3) {
+                $error = 'Le nom doit faire au moins 3 caractères.';
+            } elseif (mb_strlen($password) < 4) {
+                $error = 'Mot de passe trop court (min 4 caractères).';
+            } else {
+                $stmt = $this->db->prepare("SELECT COUNT(*) FROM admin WHERE name = :name");
+                $stmt->execute([':name' => $name]);
+                if ((int)$stmt->fetchColumn() > 0) {
+                    $error = 'Un admin existe déjà avec ce nom.';
+                } else {
+                    $hash = md5($password); // legacy admin auth uses md5
+                    $ins = $this->db->prepare("INSERT INTO admin (name, mdpa) VALUES (:name, :mdpa)");
+                    $ins->execute([':name' => $name, ':mdpa' => $hash]);
+                    $success = 'Admin créé avec succès.';
+                }
+            }
+        }
+
+        $this->render("adminAdd", "Créer un admin", "admin-add", [
+            'error' => $error,
+            'success' => $success,
+        ]);
     }
 }

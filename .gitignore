@@ -1,0 +1,23 @@
+# Dependency directories
+vendor/
+node_modules/
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+config/ai.php
+
+# IDE/editor settings
+.idea/
+.vscode/
+
+# Logs and cache
+*.log
+storage/
+tmp/
+cache/
+
+# System files
+.DS_Store
+Thumbs.db

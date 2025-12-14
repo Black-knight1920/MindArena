@@ -1,9 +1,6 @@
 <?php
-// Enable errors TEMPORARILY during debugging
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
 
-require_once __DIR__ . '/../models/User.php';
+require_once __DIR__ . '/../Models/User.php';
 
 class AuthController {
 
@@ -14,70 +11,80 @@ class AuthController {
     }
 
     public function login() {
+    session_start(); // start PHP session
 
-        if (session_id() === '') {
-            session_start();
-        }
+    $username = trim($_POST["userl"]);
+    $passwordPlain = trim($_POST["mdpl"]);
+    $password = md5($passwordPlain);
 
-        $username = filter_var(trim($_POST["userl"]), FILTER_SANITIZE_STRING);
-        $password = $_POST["mdpl"];
-
-        // ----------------------
-        // ADMIN LOGIN
-        // ----------------------
-        if ($this->user->loginAdmin($username, $password)) {
-
-            $_SESSION["admin"] = $username;
-
-            header("Location: http://127.0.0.1/project-MVC%20-%20Copie/admin_index.php");
-            exit();
-        }
-
-        // ----------------------
-        // USER LOGIN
-        // ----------------------
-        if ($this->user->loginUser($username, $password)) {
-
-            $userData = $this->user->getUserByName($username);
-
-            if (isset($userData['banned']) && $userData['banned'] == 1) {
-                header("Location: http://127.0.0.1/project-MVC%20-%20Copie/views/frontend/login.php?error=user_banned");
-                exit();
-            }
-
-            $_SESSION["username"] = $userData["name"];
-            $_SESSION["email"]    = $userData["email"];
-
-            header("Location: http://127.0.0.1/project-MVC%20-%20Copie/user_home.php");
-            exit();
-        }
-
-        // ----------------------
-        // LOGIN FAILED
-        // ----------------------
-        header("Location: http://127.0.0.1/project-MVC%20-%20Copie/views/frontend/login.php?error=user_not_found");
+    // ----------------------
+    // ADMIN LOGIN
+    // ----------------------
+    if ($this->user->loginAdmin($username, $password, $passwordPlain)) {
+        $_SESSION['user'] = [
+            'username' => $username,
+            'email'    => null,
+            'role'     => 'admin'
+        ];
+        header("Location: /mindarena_forum/admin.php?action=dashboard");
         exit();
     }
 
-    public function signup() {
+    // ----------------------
+    // USER LOGIN
+    // ----------------------
+    if ($this->user->loginUser($username, $password, $passwordPlain)) {
+        // Get user info from DB
+        $userData = $this->user->getUserByName($username);
 
-        if (session_id() === '') {
+        // Store user session in unified structure
+        $_SESSION['user'] = [
+            'username' => $userData["name"],
+            'email'    => $userData["email"],
+            'role'     => 'user'
+        ];
+
+        // Redirect to user home page
+        header("Location: /mindarena_forum/index.php?action=home");
+        exit();
+    }
+
+    // ----------------------
+    // LOGIN FAILED
+    // ----------------------
+        header("Location: /mindarena_forum/index.php?action=login&error=user_not_found");
+    exit();
+}
+
+    public function signup() {
+        if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
 
-        $name  = filter_var(trim($_POST["name"]), FILTER_SANITIZE_STRING);
-        $email = filter_var(trim($_POST["email"]), FILTER_SANITIZE_EMAIL);
-        $pass  = md5($_POST["mdp"]);  // not secure, but your choice
-        $birth = $_POST["date"];
+        $name  = trim($_POST["name"]);
+        $email = trim($_POST["email"]);
+        $pass  = md5($_POST["mdp"]);
+        $birth = trim($_POST["date"]);
         $dateI = date("Y-m-d");
 
-        // FIXED: defaults for donation, banned, admin
+        // Vérifier doublons avant insert pour éviter l'erreur 1062
+        if ($this->user->emailExists($email) || $this->user->exists($name)) {
+            header("Location: /mindarena_forum/index.php?action=login&error=e_utiliser");
+            exit();
+        }
+
         $s = $this->user->signup($name, $email, $pass, $birth, $dateI);
 
         if ($s) {
-            header("Location: http://127.0.0.1/project-MVC%20-%20Copie/views/frontend/login.php?error=acces");
+            // Auto login after signup
+            $_SESSION['user'] = [
+                'username' => $name,
+                'email'    => $email,
+                'role'     => 'user'
+            ];
+            header("Location: /mindarena_forum/index.php?action=home");
         } else {
-            header("Location: http://127.0.0.1/project-MVC%20-%20Copie/views/frontend/login.php?error=e_utiliser");
+            header("Location: /mindarena_forum/index.php?action=login&error=e_utiliser");
         }
 
         exit();

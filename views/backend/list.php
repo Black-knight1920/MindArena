@@ -126,14 +126,14 @@
 
             <ul class="sidebar-nav">
                 <li class="sidebar-nav-label">Navigation</li>
-                <li><a href="http://127.0.0.1/project-MVC%20-%20Copie/admin_index.php" class="sidebar-link"><i class="fas fa-th-large"></i> Dashboard</a></li>
-                <li><a href="http://127.0.0.1/project-MVC%20-%20Copie/users.php" class="sidebar-link active"><i class="fas fa-users"></i> Users</a></li>
+                <li><a href="<?= BASE_URL ?>/admin_index.php" class="sidebar-link"><i class="fas fa-th-large"></i> Dashboard</a></li>
+                <li><a href="<?= BASE_URL ?>/users.php" class="sidebar-link active"><i class="fas fa-users"></i> Users</a></li>
                 <!--<li><a href="#" class="sidebar-link"><i class="fas fa-cog"></i> Settings</a></li>
                 <li><a href="#" class="sidebar-link"><i class="fas fa-chart-bar"></i> Statistics</a></li>-->
             </ul>
 
             <div class="sidebar-footer">
-                <a href="http://127.0.0.1/project-MVC%20-%20Copie/views/frontend/login.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                <a href="<?= BASE_URL ?>/index.php?action=login"><i class="fas fa-sign-out-alt"></i> Logout</a>
             </div>
         </div>
 
@@ -164,12 +164,11 @@
                         <span>Light</span>
                     </div>
 
-                    <div class="header-user" id="adminProfileTrigger" style="cursor: pointer; transition: opacity 0.2s ease;">
+                    <div class="header-user">
                         <div class="user-avatar">
                             <i class="fas fa-user"></i>
                         </div>
-                        <span><?php echo htmlspecialchars($_SESSION["admin"]); ?></span>
-                        <i class="fas fa-chevron-down" style="font-size: 10px; margin-left: 6px; opacity: 0.7;"></i>
+                        <span><?php echo $_SESSION["admin"] ?></span>
                     </div>
                 </div>
             </div>
@@ -184,24 +183,6 @@
                         </button>
                     </div>
 
-                    <!-- Success/Error Messages -->
-                    <?php if (isset($_GET['message'])): ?>
-                        <div class="alert alert-success card-shell" style="background: #10b981; color: white; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px;">
-                            <i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($_GET['message']); ?>
-                        </div>
-                    <?php endif; ?>
-                    <?php if (isset($_GET['error'])): ?>
-                        <div class="alert alert-error card-shell" style="background: #ef4444; color: white; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px;">
-                            <i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($_GET['error']); ?>
-                            <?php if (strpos($_GET['error'], 'database migration') !== false): ?>
-                                <br><br>
-                                <a href="run_migration.php" style="color: white; text-decoration: underline; font-weight: bold;">
-                                    <i class="fas fa-database"></i> Click here to run the database migration
-                                </a>
-                            <?php endif; ?>
-                        </div>
-                    <?php endif; ?>
-
                     <!-- User List -->
                     <div class="user-list">
                         <?php if (!empty($data['users'])): ?>
@@ -211,13 +192,7 @@
                                         <p><strong>ID:</strong> <?php echo htmlspecialchars($user['id']); ?></p>
                                         <p><strong>Name:</strong> <?php echo htmlspecialchars($user['name']); ?></p>
                                         <p><strong>Email:</strong> <?php echo htmlspecialchars($user['email']); ?></p>
-                                        <p><strong>Status:</strong> 
-                                            <?php if (isset($user['banned']) && $user['banned'] == 1): ?>
-                                                <span style="color: #ef4444; font-weight: bold;"><i class="fas fa-ban"></i> Banned</span>
-                                            <?php else: ?>
-                                                <span style="color: #10b981; font-weight: bold;"><i class="fas fa-check-circle"></i> Active</span>
-                                            <?php endif; ?>
-                                        </p>
+                                        <p><strong>Password:</strong> <?php echo htmlspecialchars($user['mdp']); ?></p>
                                         <p><strong>Date of Birth:</strong> <?php echo htmlspecialchars($user['date-naissance']); ?></p>
                                         <p><strong>Date Joined:</strong> <?php echo htmlspecialchars($user['date-inscrit']); ?></p>
                                         <p><strong>Donation:</strong> <?php echo htmlspecialchars($user['donation']); ?></p>
@@ -232,23 +207,6 @@
                                             data-donation="<?php echo htmlspecialchars($user['donation']); ?>">
                                             <i class="fas fa-edit"></i> Edit
                                         </button>
-
-                                        <!-- Ban/Unban Button -->
-                                        <?php if (isset($user['banned']) && $user['banned'] == 1): ?>
-                                            <form action="users.php" method="post" onsubmit="return confirm('Are you sure you want to unban this user?');" style="display:inline;">
-                                                <input type="hidden" name="user_id" value="<?php echo $user['id']; ?>">
-                                                <button type="submit" name="unban_user" class="btn-unban">
-                                                    <i class="fas fa-check"></i> Unban
-                                                </button>
-                                            </form>
-                                        <?php else: ?>
-                                            <form action="users.php" method="post" onsubmit="return confirm('Are you sure you want to ban this user?');" style="display:inline;">
-                                                <input type="hidden" name="user_id" value="<?php echo $user['id']; ?>">
-                                                <button type="submit" name="ban_user" class="btn-ban">
-                                                    <i class="fas fa-ban"></i> Ban
-                                                </button>
-                                            </form>
-                                        <?php endif; ?>
 
                                         <!-- Delete Form -->
                                         <form action="users.php" method="post" onsubmit="return confirm('Are you sure you want to delete this user?');" style="display:inline;">
@@ -286,10 +244,6 @@
                 <label for="editEmail">Email:</label>
                 <input type="email" id="editEmail" name="email" required>
 
-                <label for="editPassword">Password (leave blank to keep current):</label>
-                <input type="password" id="editPassword" name="password" minlength="6" placeholder="Enter new password or leave blank">
-                <small style="color: var(--text-muted); font-size: 0.85rem; display: block; margin-top: -8px; margin-bottom: 10px;">Minimum 6 characters. Leave blank to keep current password.</small>
-
                 <label for="editDob">Date of Birth:</label>
                 <input type="date" id="editDob" name="date_naissance" required>
 
@@ -297,41 +251,6 @@
                 <input type="number" id="editDonation" name="donation" min="0" step="0.01" required>
 
                 <button type="submit" name="edit_user" class="btn-save" style="margin-top: 10px;">Save Changes</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Admin Profile Edit Modal -->
-    <div id="adminProfileModal" class="modal">
-        <div class="modal-content card-shell">
-            <span class="close" id="adminProfileClose" style="cursor:pointer; font-size: 22px;">&times;</span>
-            <h2>Edit Admin Profile</h2>
-            <div id="adminProfileMessage" style="display: none; padding: 10px; margin-bottom: 15px; border-radius: 8px;"></div>
-            
-            <form id="adminProfileForm">
-                <label for="adminUsername">Username:</label>
-                <input type="text" id="adminUsername" name="username" required>
-
-                <label for="adminEmail">Email (optional - not stored in database):</label>
-                <input type="email" id="adminEmail" name="email" placeholder="Email not stored in admin table">
-
-                <label for="adminPassword">Password (leave blank to keep current):</label>
-                <div style="position: relative;">
-                    <input type="password" id="adminPassword" name="password" minlength="6" placeholder="Enter new password or leave blank" style="width: 100%; padding-right: 40px; box-sizing: border-box;">
-                    <button type="button" id="togglePassword" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 5px;">
-                        <i class="fas fa-eye" id="passwordIcon"></i>
-                    </button>
-                </div>
-                <small style="color: var(--text-muted); font-size: 0.85rem; display: block; margin-top: -8px; margin-bottom: 10px;">Minimum 6 characters. Leave blank to keep current password.</small>
-
-                <div style="display: flex; gap: 10px; margin-top: 15px;">
-                    <button type="submit" class="btn-save" style="flex: 1;">
-                        <i class="fas fa-save"></i> Save Changes
-                    </button>
-                    <button type="button" id="adminProfileCancel" class="btn-cancel" style="flex: 1; background: var(--text-muted); color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 500; transition: background 0.2s ease;">
-                        Cancel
-                    </button>
-                </div>
             </form>
         </div>
     </div>
@@ -372,7 +291,6 @@
         const modalValidators = {
             editName: value => /^[a-zA-Z0-9_ ]{3,}$/.test(value),
             editEmail: value => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value),
-            editPassword: value => value === "" || value.length >= 6, // Allow empty (keep current) or min 6 chars
             editDob: value => {
                 const birth = new Date(value);
                 const age = new Date().getFullYear() - birth.getFullYear();
@@ -402,25 +320,12 @@
             input.addEventListener("input", () => {
                 const id = input.id;
                 const value = input.value.trim();
-                
-                // For password, allow empty (keep current password)
-                if (id === "editPassword" && value === "") {
-                    clearError(input);
-                    return;
-                }
-                
-                if (value === "") { 
-                    if (id !== "editPassword") {
-                        clearError(input);
-                    }
-                    return; 
-                }
+                if (value === "") { clearError(input); return; }
 
                 if (!modalValidators[id](value)) {
                     let msg = {
                         editName: "Name must be at least 3 characters.",
                         editEmail: "Enter a valid email.",
-                        editPassword: "Password must be at least 6 characters or leave blank.",
                         editDob: "User must be at least 18 years old.",
                         editDonation: "Donation must be 0 or higher."
                     };
@@ -436,18 +341,10 @@
             let valid = true;
             document.querySelectorAll("#editUserForm input").forEach(input => {
                 const id = input.id;
-                const value = input.value.trim();
-                
-                // Skip validation for empty password (keep current)
-                if (id === "editPassword" && value === "") {
-                    return;
-                }
-                
-                if (!modalValidators[id](value)) {
+                if (!modalValidators[id](input.value.trim())) {
                     let msg = {
                         editName: "Invalid name.",
                         editEmail: "Invalid email.",
-                        editPassword: "Password must be at least 6 characters or leave blank.",
                         editDob: "Invalid birth date.",
                         editDonation: "Invalid donation amount."
                     };
@@ -585,150 +482,6 @@
             document.getElementById('themeToggle').addEventListener('click', () => {
                 document.body.classList.toggle('light');
             });
-
-            // Admin Profile Modal functionality
-            const adminProfileModal = document.getElementById('adminProfileModal');
-            const adminProfileTrigger = document.getElementById('adminProfileTrigger');
-            const adminProfileClose = document.getElementById('adminProfileClose');
-            const adminProfileCancel = document.getElementById('adminProfileCancel');
-            const adminProfileForm = document.getElementById('adminProfileForm');
-            const adminProfileMessage = document.getElementById('adminProfileMessage');
-            const togglePassword = document.getElementById('togglePassword');
-            const adminPassword = document.getElementById('adminPassword');
-            const passwordIcon = document.getElementById('passwordIcon');
-
-            // Toggle password visibility
-            togglePassword.addEventListener('click', () => {
-                const type = adminPassword.getAttribute('type') === 'password' ? 'text' : 'password';
-                adminPassword.setAttribute('type', type);
-                passwordIcon.classList.toggle('fa-eye');
-                passwordIcon.classList.toggle('fa-eye-slash');
-            });
-
-            // Open admin profile modal
-            adminProfileTrigger.addEventListener('click', () => {
-                // Load admin data
-                loadAdminProfile();
-                adminProfileModal.style.display = 'flex';
-            });
-
-            // Close admin profile modal
-            adminProfileClose.addEventListener('click', () => {
-                adminProfileModal.style.display = 'none';
-                adminProfileMessage.style.display = 'none';
-            });
-
-            adminProfileCancel.addEventListener('click', () => {
-                adminProfileModal.style.display = 'none';
-                adminProfileMessage.style.display = 'none';
-            });
-
-            window.addEventListener('click', (e) => {
-                if (e.target === adminProfileModal) {
-                    adminProfileModal.style.display = 'none';
-                    adminProfileMessage.style.display = 'none';
-                }
-            });
-
-            // Load admin profile data
-            function loadAdminProfile() {
-                const xhr = new XMLHttpRequest();
-                xhr.open('POST', 'admin_profile.php', true);
-                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-                xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-                
-                xhr.onreadystatechange = function() {
-                    if (xhr.readyState === 4) {
-                        if (xhr.status === 200) {
-                            try {
-                                const response = JSON.parse(xhr.responseText);
-                                if (response.success && response.data) {
-                                    document.getElementById('adminUsername').value = response.data.name || '';
-                                    // Email field is optional (not in database)
-                                    document.getElementById('adminEmail').value = '';
-                                    adminPassword.value = '';
-                                } else {
-                                    const errorMsg = response.message || 'Failed to load profile data';
-                                    showAdminMessage(errorMsg, 'error');
-                                    console.error('Profile load error:', response);
-                                }
-                            } catch (e) {
-                                showAdminMessage('Error parsing response: ' + e.message, 'error');
-                                console.error('Parse error:', e, 'Response:', xhr.responseText);
-                            }
-                        } else {
-                            showAdminMessage('Server error (Status: ' + xhr.status + ')', 'error');
-                            console.error('HTTP Error:', xhr.status, xhr.responseText);
-                        }
-                    }
-                };
-                
-                xhr.onerror = function() {
-                    showAdminMessage('Network error. Please check your connection.', 'error');
-                };
-                
-                xhr.send('action=get');
-            }
-
-            // Handle form submission
-            adminProfileForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                
-                const formData = new FormData(adminProfileForm);
-                formData.append('action', 'update');
-                
-                const xhr = new XMLHttpRequest();
-                xhr.open('POST', 'admin_profile.php', true);
-                xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-                
-                xhr.onreadystatechange = function() {
-                    if (xhr.readyState === 4) {
-                        if (xhr.status === 200) {
-                            try {
-                                const response = JSON.parse(xhr.responseText);
-                                if (response.success) {
-                                    showAdminMessage(response.message || 'Profile updated successfully!', 'success');
-                                    // Update admin name in header
-                                    if (response.newUsername) {
-                                        const adminNameSpan = adminProfileTrigger.querySelector('span');
-                                        if (adminNameSpan) {
-                                            adminNameSpan.textContent = response.newUsername;
-                                        }
-                                    }
-                                    // Clear password field
-                                    adminPassword.value = '';
-                                    // Close modal after 1.5 seconds
-                                    setTimeout(() => {
-                                        adminProfileModal.style.display = 'none';
-                                        adminProfileMessage.style.display = 'none';
-                                    }, 1500);
-                                } else {
-                                    showAdminMessage(response.message || 'Failed to update profile', 'error');
-                                }
-                            } catch (e) {
-                                showAdminMessage('Error processing response', 'error');
-                            }
-                        } else {
-                            showAdminMessage('Server error. Please try again.', 'error');
-                        }
-                    }
-                };
-                
-                xhr.send(formData);
-            });
-
-            // Show message in modal
-            function showAdminMessage(message, type) {
-                adminProfileMessage.textContent = message;
-                adminProfileMessage.style.display = 'block';
-                if (type === 'success') {
-                    adminProfileMessage.style.background = '#10b981';
-                    adminProfileMessage.style.color = 'white';
-                } else {
-                    adminProfileMessage.style.background = '#ef4444';
-                    adminProfileMessage.style.color = 'white';
-                }
-            }
         });
     </script>
 </body>
