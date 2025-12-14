@@ -1,280 +1,191 @@
 <?php
-/**
- * LanguageHelper - Gestion multilingue et multi-devises SANS base de données
- */
+// LanguageHelper.php
 class LanguageHelper {
     private static $instance = null;
     private $currentLang = 'fr';
     private $translations = [];
-    private $currencyConfig = [];
-    
-    // Taux de change (à mettre à jour périodiquement)
-    private $exchangeRates = [
-        'EUR' => 1.00,   // Euro (référence)
-        'USD' => 1.10,   // Dollar US
-        'GBP' => 0.85,   // Livre Sterling
-        'CAD' => 1.45,   // Dollar Canadien
-        'CHF' => 0.95,   // Franc Suisse
-        'JPY' => 160.00, // Yen Japonais
-        'AUD' => 1.65,   // Dollar Australien
+    private $supportedLanguages = [
+        'fr' => [
+            'name' => 'Français',
+            'native' => 'Français',
+            'flag' => '🇫🇷',
+            'direction' => 'ltr'
+        ],
+        'en' => [
+            'name' => 'English',
+            'native' => 'English',
+            'flag' => '🇬🇧',
+            'direction' => 'ltr'
+        ],
+        'es' => [
+            'name' => 'Español',
+            'native' => 'Español',
+            'flag' => '🇪🇸',
+            'direction' => 'ltr'
+        ],
+        'de' => [
+            'name' => 'Deutsch',
+            'native' => 'Deutsch',
+            'flag' => '🇩🇪',
+            'direction' => 'ltr'
+        ],
+        'it' => [
+            'name' => 'Italiano',
+            'native' => 'Italiano',
+            'flag' => '🇮🇹',
+            'direction' => 'ltr'
+        ],
+        'pt' => [
+            'name' => 'Português',
+            'native' => 'Português',
+            'flag' => '🇵🇹',
+            'direction' => 'ltr'
+        ]
     ];
-    
+
     private function __construct() {
-        session_start();
-        $this->detectLanguage();
-        $this->loadLanguageFiles();
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        $this->loadLanguage();
     }
-    
+
     public static function getInstance() {
         if (self::$instance === null) {
             self::$instance = new self();
         }
         return self::$instance;
     }
-    
-    /**
-     * Détecte et définit la langue active
-     */
-    private function detectLanguage() {
-        // 1. Priorité au paramètre URL
-        if (isset($_GET['lang']) && $this->isValidLanguage($_GET['lang'])) {
+
+    private function loadLanguage() {
+        // Vérifier le paramètre GET
+        if (isset($_GET['lang']) && array_key_exists($_GET['lang'], $this->supportedLanguages)) {
             $this->currentLang = $_GET['lang'];
-            $_SESSION['user_lang'] = $this->currentLang;
+            $_SESSION['lang'] = $this->currentLang;
         }
-        // 2. Priorité à la session
-        elseif (isset($_SESSION['user_lang']) && $this->isValidLanguage($_SESSION['user_lang'])) {
-            $this->currentLang = $_SESSION['user_lang'];
+        // Vérifier la session
+        elseif (isset($_SESSION['lang']) && array_key_exists($_SESSION['lang'], $this->supportedLanguages)) {
+            $this->currentLang = $_SESSION['lang'];
         }
-        // 3. Détection du navigateur
+        // Vérifier le navigateur
         else {
-            $browserLang = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? 'fr', 0, 2);
-            $this->currentLang = $this->isValidLanguage($browserLang) ? $browserLang : 'fr';
+            $this->currentLang = $this->getBrowserLanguage();
         }
+
+        // Charger les fichiers de traduction
+        $this->loadTranslations();
     }
-    
-    /**
-     * Vérifie si la langue est supportée
-     */
-    private function isValidLanguage($lang) {
-        $supported = ['fr', 'en', 'es', 'de', 'it', 'pt'];
-        return in_array($lang, $supported);
+
+    private function getBrowserLanguage() {
+        $acceptLang = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? 'fr';
+        $lang = substr($acceptLang, 0, 2);
+        return array_key_exists($lang, $this->supportedLanguages) ? $lang : 'fr';
     }
-    
-    /**
-     * Charge les fichiers de langue
-     */
-    private function loadLanguageFiles() {
-        $langDir = __DIR__ . '/lang/';
-        
-        // Fichier principal de la langue
-        $mainFile = $langDir . $this->currentLang . '.php';
-        if (file_exists($mainFile)) {
-            $this->translations = require $mainFile;
-        } else {
-            // Fallback en français
-            $fallbackFile = $langDir . 'fr.php';
+
+    private function loadTranslations() {
+        $langDir = __DIR__ . '/lang';
+        $langFile = $langDir . '/' . $this->currentLang . '.php';
+        $fallbackFile = $langDir . '/fr.php';
+
+        if (file_exists($langFile)) {
+            $this->translations = require $langFile;
+        } elseif (file_exists($fallbackFile)) {
             $this->translations = require $fallbackFile;
+            $this->currentLang = 'fr';
+        } else {
+            $this->translations = [];
         }
-        
-        // Configuration devise
-        $this->currencyConfig = [
-            'symbol' => $this->translations['currency_symbol'] ?? '€',
-            'code' => $this->translations['currency_code'] ?? 'EUR',
-            'decimal' => $this->translations['decimal_separator'] ?? ',',
-            'thousands' => $this->translations['thousands_separator'] ?? ' ',
-        ];
     }
-    
-    /**
-     * Traduction simple
-     */
+
     public function translate($key, $params = []) {
-        $text = $this->translations[$key] ?? $key;
+        $translation = $this->translations[$key] ?? $key;
         
-        // Remplacer les paramètres dynamiques
-        foreach ($params as $param => $value) {
-            $text = str_replace(':' . $param, $value, $text);
+        // Remplacer les paramètres
+        if (!empty($params)) {
+            foreach ($params as $param => $value) {
+                $translation = str_replace(':' . $param, $value, $translation);
+            }
         }
         
-        return $text;
+        return $translation;
     }
-    
-    /**
-     * Alias pour translate()
-     */
-    public function t($key, $params = []) {
-        return $this->translate($key, $params);
+
+    public function plural($key, $count, $params = []) {
+        // Implémentation simple du pluriel
+        $translation = $this->translate($key, $params);
+        return $translation;
     }
-    
-    /**
-     * Formatage de devise
-     */
-    public function formatMoney($amount, $fromCurrency = 'EUR') {
-        $toCurrency = $this->currencyConfig['code'];
-        $converted = $this->convertCurrency($amount, $fromCurrency, $toCurrency);
-        
-        // Format selon la devise
-        switch ($toCurrency) {
-            case 'USD':
-            case 'CAD':
-            case 'AUD':
-            case 'GBP':
-                return $this->currencyConfig['symbol'] . number_format(
-                    $converted, 
-                    2, 
-                    '.', 
-                    ','
-                );
-                
-            case 'JPY':
-                return $this->currencyConfig['symbol'] . number_format(
-                    $converted, 
-                    0, 
-                    '', 
-                    ','
-                );
-                
-            case 'CHF':
-                return number_format(
-                    $converted, 
-                    2, 
-                    '.', 
-                    "'"
-                ) . ' ' . $this->currencyConfig['symbol'];
-                
-            default: // EUR et autres
-                return number_format(
-                    $converted, 
-                    2, 
-                    $this->currencyConfig['decimal'], 
-                    $this->currencyConfig['thousands']
-                ) . ' ' . $this->currencyConfig['symbol'];
-        }
-    }
-    
-    /**
-     * Conversion de devise
-     */
-    private function convertCurrency($amount, $from, $to) {
-        if ($from === $to || !isset($this->exchangeRates[$from]) || !isset($this->exchangeRates[$to])) {
-            return $amount;
-        }
-        
-        // Conversion via EUR comme devise pivot
-        $amountInEur = $amount / $this->exchangeRates[$from];
-        return $amountInEur * $this->exchangeRates[$to];
-    }
-    
-    /**
-     * Formatage de date selon la locale
-     */
-    public function formatDate($dateString, $format = 'medium') {
-        $date = new DateTime($dateString);
-        
-        $formats = [
-            'fr' => [
-                'short' => 'd/m/Y',
-                'medium' => 'd M Y',
-                'long' => 'd F Y',
-                'full' => 'l d F Y',
-            ],
-            'en' => [
-                'short' => 'm/d/Y',
-                'medium' => 'M d, Y',
-                'long' => 'F d, Y',
-                'full' => 'l, F d, Y',
-            ],
-            'es' => [
-                'short' => 'd/m/Y',
-                'medium' => 'd M Y',
-                'long' => 'd de F de Y',
-                'full' => 'l d de F de Y',
-            ],
-        ];
-        
-        $dateFormat = $formats[$this->currentLang][$format] ?? $formats['en'][$format];
-        
-        // Traduction des mois/jours si nécessaire
-        $formatted = $date->format($dateFormat);
-        
-        if ($this->currentLang !== 'en') {
-            $englishMonths = ['January', 'February', 'March', 'April', 'May', 'June', 
-                             'July', 'August', 'September', 'October', 'November', 'December'];
-            $englishDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-            
-            $localMonths = $this->translations['months'] ?? $englishMonths;
-            $localDays = $this->translations['days'] ?? $englishDays;
-            
-            $formatted = str_replace($englishMonths, $localMonths, $formatted);
-            $formatted = str_replace($englishDays, $localDays, $formatted);
-        }
-        
-        return $formatted;
-    }
-    
-    /**
-     * Récupère la langue courante
-     */
+
     public function getCurrentLang() {
         return $this->currentLang;
     }
-    
-    /**
-     * Liste des langues supportées
-     */
+
     public function getSupportedLanguages() {
+        return $this->supportedLanguages;
+    }
+
+    // Informations de devise selon la langue (EN => USD, autres => EUR)
+    public function getCurrencyInfo() {
+        if ($this->currentLang === 'en') {
+            return [
+                'code' => 'USD',
+                'symbol' => '$',
+                'name' => 'US Dollar',
+                'locale' => 'en_US'
+            ];
+        }
+
         return [
-            'fr' => ['name' => 'Français', 'flag' => '🇫🇷', 'native' => 'Français'],
-            'en' => ['name' => 'English', 'flag' => '🇺🇸', 'native' => 'English'],
-            'es' => ['name' => 'Spanish', 'flag' => '🇪🇸', 'native' => 'Español'],
-            'de' => ['name' => 'German', 'flag' => '🇩🇪', 'native' => 'Deutsch'],
-            'it' => ['name' => 'Italian', 'flag' => '🇮🇹', 'native' => 'Italiano'],
-            'pt' => ['name' => 'Portuguese', 'flag' => '🇵🇹', 'native' => 'Português'],
+            'code' => 'EUR',
+            'symbol' => '€',
+            'name' => 'Euro',
+            'locale' => 'fr_FR'
         ];
     }
-    
+
     /**
-     * Change la langue
+     * Convertit un montant stocké en EUR vers la devise d'affichage (USD si EN)
      */
-    public function setLanguage($lang) {
-        if ($this->isValidLanguage($lang)) {
-            $this->currentLang = $lang;
-            $_SESSION['user_lang'] = $lang;
-            $this->loadLanguageFiles();
-            return true;
+    public function convertFromEUR($amount) {
+        if ($this->currentLang === 'en') {
+            return $amount * 1.16; // EUR -> USD
         }
-        return false;
+        return $amount; // EUR -> EUR
     }
-    
+
     /**
-     * Récupère la configuration devise
+     * Convertit un montant saisi en devise d'affichage vers EUR (stockage BD)
      */
-    public function getCurrencyInfo() {
-        return $this->currencyConfig;
+    public function convertToEUR($amount) {
+        if ($this->currentLang === 'en') {
+            return $amount * 0.86; // USD -> EUR
+        }
+        return $amount; // EUR -> EUR
     }
-    
+
     /**
-     * Traduction plurielle
+     * Formate un montant déjà exprimé dans la devise d'affichage
      */
-    public function plural($key, $count, $params = []) {
-        $baseKey = $key . '_';
-        
-        if ($count == 0) {
-            $key .= '_zero';
-        } elseif ($count == 1) {
-            $key .= '_one';
-        } elseif ($count > 1) {
-            $key .= '_many';
+    public function formatMoneyDisplay($amount) {
+        $currency = $this->getCurrencyInfo();
+        if ($currency['code'] === 'USD') {
+            return $currency['symbol'] . number_format($amount, 2, '.', ',');
         }
-        
-        $text = $this->translate($key, array_merge(['count' => $count], $params));
-        
-        // Fallback si la clé spécifique n'existe pas
-        if ($text === $key) {
-            $text = $this->translate($baseKey . 'other', array_merge(['count' => $count], $params));
-        }
-        
-        return $text;
+        return number_format($amount, 2, ',', ' ') . ' ' . $currency['symbol'];
+    }
+
+    /**
+     * Formate un montant stocké en EUR pour l'affichage (avec conversion éventuelle)
+     */
+    public function formatMoneyFromEUR($amount) {
+        $converted = $this->convertFromEUR($amount);
+        return $this->formatMoneyDisplay($converted);
+    }
+
+    /**
+     * Formate un montant déjà dans la devise courante (alias compatibilité)
+     */
+    public function formatMoney($amount) {
+        return $this->formatMoneyDisplay($amount);
     }
 }
-?>

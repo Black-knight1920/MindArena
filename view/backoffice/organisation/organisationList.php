@@ -412,6 +412,10 @@ foreach ($tousLesDons as $don) {
             user-select: none;
             transition: background .2s ease;
         }
+        .modern-table thead {
+            background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(168,85,247,0.15));
+            border: 1px solid var(--primary);
+        }
         .modern-table th:hover {
             background: linear-gradient(135deg, #7c3aed, #9333ea);
         }
@@ -502,6 +506,309 @@ foreach ($tousLesDons as $don) {
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
         }
+
+        /* ================= PAGINATION STYLES ================= */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 30px;
+            padding: 20px;
+            flex-wrap: wrap;
+        }
+
+        .pagination-info {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-right: 20px;
+        }
+
+        .pagination-btn {
+            padding: 8px 12px;
+            border: 1px solid var(--border-subtle);
+            background: var(--bg-soft);
+            color: var(--text);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139,92,246,0.3);
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-btn.active {
+            background: linear-gradient(135deg, var(--primary), #a855f7);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(139,92,246,0.3);
+        }
+
+        .items-per-page {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: auto;
+        }
+
+        .items-per-page select {
+            padding: 8px 12px;
+            border: 1px solid var(--border-subtle);
+            background: var(--bg-soft);
+            color: var(--text);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        /* ================= MODAL STYLES ================= */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            box-shadow: var(--shadow-soft);
+            max-width: 600px;
+            width: 90%;
+            max-height: 85vh;
+            overflow: hidden;
+            position: relative;
+            animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), #a855f7, var(--primary));
+            background-size: 200% 100%;
+            animation: shimmer 3s infinite linear;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-header {
+            padding: 28px 35px;
+            background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(168,85,247,0.05));
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h3 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .modal-header h3 i {
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, var(--primary), #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .modal-close {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: var(--primary-soft);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal-close:hover {
+            background: var(--primary);
+            color: white;
+            transform: rotate(90deg) scale(1.1);
+            box-shadow: 0 0 20px rgba(139,92,246,0.5);
+        }
+
+        .modal-body {
+            padding: 35px;
+            max-height: calc(85vh - 100px);
+            overflow-y: auto;
+        }
+
+        .modal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .modal-body::-webkit-scrollbar-track {
+            background: var(--bg-soft);
+            border-radius: 10px;
+        }
+
+        .modal-body::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+
+        .detail-group {
+            margin-bottom: 24px;
+            animation: fadeInUp 0.5s ease forwards;
+            opacity: 0;
+        }
+
+        .detail-group:nth-child(1) { animation-delay: 0.1s; }
+        .detail-group:nth-child(2) { animation-delay: 0.15s; }
+        .detail-group:nth-child(3) { animation-delay: 0.2s; }
+        .detail-group:nth-child(4) { animation-delay: 0.25s; }
+        .detail-group:nth-child(5) { animation-delay: 0.3s; }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .detail-label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .detail-label i {
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+
+        .detail-value {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--text);
+            padding: 16px 20px;
+            background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(168,85,247,0.1));
+            border-radius: 12px;
+            border: 1px solid var(--border-subtle);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .detail-value::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, var(--primary), #a855f7);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .detail-value:hover {
+            border-color: var(--primary);
+            transform: translateX(3px);
+        }
+
+        .detail-value:hover::before {
+            opacity: 1;
+        }
+
+        .detail-value.highlight {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(16,185,129,0.05));
+            border: 2px solid var(--success);
+            color: var(--success);
+            text-align: center;
+            box-shadow: 0 0 20px rgba(16,185,129,0.2);
+            animation: pulseAmount 2s infinite;
+        }
+
+        .detail-value.highlight::before {
+            width: 100%;
+            background: linear-gradient(90deg, transparent, rgba(16,185,129,0.3), transparent);
+        }
+
+        @keyframes pulseAmount {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(16,185,129,0.2);
+            }
+            50% {
+                box-shadow: 0 0 30px rgba(16,185,129,0.4);
+            }
+        }
+
         .progress {
             height: 6px;
             background: var(--border-subtle);
@@ -584,7 +891,7 @@ foreach ($tousLesDons as $don) {
             </div>
             <nav class="sidebar-nav">
                 <div class="sidebar-nav-label">Navigation</div>
-                <a href="/projet-dons/backoffice.php" class="sidebar-link">
+                <a href="../../../backoffice.php" class="sidebar-link">
                     <i class="bi bi-speedometer2"></i>
                     <span>Dashboard</span>
                 </a>
@@ -597,14 +904,10 @@ foreach ($tousLesDons as $don) {
                     <i class="bi bi-building"></i>
                     <span>Organisations</span>
                 </a>
-                <a href="addOrganisation.php" class="sidebar-link">
-                    <i class="bi bi-plus-circle"></i>
-                    <span>Nouvelle Organisation</span>
-                </a>
             </nav>
             <div class="sidebar-footer">
                 <span class="text-muted-small">© 2024 Mind Arena</span>
-                <a href="/projet-dons/View/frontoffice/index.php">
+                <a href="../../frontoffice/index.php">
                     <i class="bi bi-eye"></i>
                     Voir le site
                 </a>
@@ -799,6 +1102,9 @@ foreach ($tousLesDons as $don) {
                                             </td>
                                             <td>
                                                 <div class="action-buttons">
+                                                    <button class="btn btn-info" onclick="showOrgDetails('<?= htmlspecialchars($org['id']) ?>', '<?= htmlspecialchars($org['nom']) ?>', '<?= htmlspecialchars($org['description']) ?>', '<?= htmlspecialchars($org['website_url'] ?? '') ?>', '<?= htmlspecialchars($montant) ?>', '<?= htmlspecialchars($nombreDons) ?>')">
+                                                        <i class="bi bi-info-circle"></i>
+                                                    </button>
                                                     <a href="modifyOrganisation.php?id=<?= $org['id'] ?>" class="btn btn-success">
                                                         <i class="bi bi-pencil"></i>
                                                     </a>
@@ -813,6 +1119,26 @@ foreach ($tousLesDons as $don) {
                                     <?php endif; ?>
                                 </tbody>
                             </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div class="pagination-container">
+                            <div class="pagination-info">
+                                Affichage <span id="pageStart">1</span>-<span id="pageEnd">10</span> sur <span id="totalItems"><?= count($organisations) ?></span> organisation(s)
+                            </div>
+                            <div style="flex: 1;"></div>
+                            <button class="pagination-btn" id="prevBtn" onclick="previousPage()">← Précédent</button>
+                            <div id="pageNumbers" style="display: flex; gap: 4px;"></div>
+                            <button class="pagination-btn" id="nextBtn" onclick="nextPage()">Suivant →</button>
+                            <div class="items-per-page">
+                                <label for="itemsPerPage">Afficher par page:</label>
+                                <select id="itemsPerPage" onchange="changeItemsPerPage()">
+                                    <option value="10">10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -904,7 +1230,98 @@ foreach ($tousLesDons as $don) {
             });
 
             resultCount.textContent = `${visibleCount} organisation(s) trouvée(s)`;
+
+            // Reset pagination to page 1 when filtering
+            currentPage = 1;
+            updatePagination();
         }
+
+        // ========== PAGINATION CLASSIQUE ==========
+        let currentPage = 1;
+        let itemsPerPage = 10;
+
+        function getAllDataRows() {
+            // On ne veut paginer QUE les vraies lignes d'organisation, pas les totaux !
+            return Array.from(document.querySelectorAll('tbody tr.data-row'));
+        }
+
+        function updatePagination() {
+            const rows = getAllDataRows();
+            const totalPages = Math.ceil(rows.length / itemsPerPage);
+
+            // Masquer toutes les lignes
+            rows.forEach(row => row.style.display = 'none');
+
+            // Afficher uniquement les lignes de la page courante
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            rows.slice(startIndex, endIndex).forEach(row => row.style.display = '');
+
+            // Mettre à jour l'info pagination
+            document.getElementById('pageStart').textContent = rows.length > 0 ? startIndex + 1 : 0;
+            document.getElementById('pageEnd').textContent = Math.min(endIndex, rows.length);
+            document.getElementById('totalItems').textContent = rows.length;
+
+            // Activer/désactiver les boutons
+            document.getElementById('prevBtn').disabled = currentPage === 1;
+            document.getElementById('nextBtn').disabled = currentPage === totalPages || totalPages === 0;
+
+            // Générer les numéros de page
+            const pageNumbersDiv = document.getElementById('pageNumbers');
+            pageNumbersDiv.innerHTML = '';
+            if (totalPages > 0) {
+                for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+                    const btn = document.createElement('button');
+                    btn.className = 'pagination-btn' + (i === currentPage ? ' active' : '');
+                    btn.textContent = i;
+                    btn.onclick = () => goToPage(i);
+                    pageNumbersDiv.appendChild(btn);
+                }
+                if (totalPages > 5) {
+                    const dots = document.createElement('span');
+                    dots.textContent = '...';
+                    dots.style.color = 'var(--text-muted)';
+                    pageNumbersDiv.appendChild(dots);
+                    const lastBtn = document.createElement('button');
+                    lastBtn.className = 'pagination-btn';
+                    lastBtn.textContent = totalPages;
+                    lastBtn.onclick = () => goToPage(totalPages);
+                    pageNumbersDiv.appendChild(lastBtn);
+                }
+            }
+        }
+
+        function previousPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                updatePagination();
+            }
+        }
+
+        function nextPage() {
+            const rows = getAllDataRows();
+            const totalPages = Math.ceil(rows.length / itemsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                updatePagination();
+            }
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            updatePagination();
+        }
+
+        function changeItemsPerPage() {
+            itemsPerPage = parseInt(document.getElementById('itemsPerPage').value, 10);
+            currentPage = 1;
+            updatePagination();
+        }
+
+        // Initialisation au chargement
+        window.addEventListener('DOMContentLoaded', () => {
+            updatePagination();
+        });
 
         function sortTable(columnIndex) {
             const rows = getDataRows();
@@ -954,6 +1371,71 @@ foreach ($tousLesDons as $don) {
             headerSearch.value = '';
             applyFilters();
         });
+
+        // ========== MODAL DETAILS ==========
+        function showOrgDetails(id, nom, description, website, montant, dons) {
+            document.getElementById('modalOrgId').textContent = '#' + id;
+            document.getElementById('modalOrgNom').textContent = nom;
+            document.getElementById('modalOrgDescription').textContent = description || 'Non renseignée';
+            document.getElementById('modalOrgWebsite').textContent = website || 'Non renseigné';
+            document.getElementById('modalOrgMontant').textContent = montant + ' €';
+            document.getElementById('modalOrgDons').textContent = dons + ' don(s)';
+            document.getElementById('orgModal').classList.add('show');
+        }
+
+        function closeOrgModal() {
+            document.getElementById('orgModal').classList.remove('show');
+        }
+
+        // Close modal on overlay click
+        document.getElementById('orgModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeOrgModal();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeOrgModal();
+            }
+        });
     </script>
+
+    <!-- Organisation Detail Modal -->
+    <div class="modal-overlay" id="orgModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="bi bi-building"></i> Détails de l'Organisation</h3>
+                <button class="modal-close" onclick="closeOrgModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-group">
+                    <div class="detail-label"><i class="bi bi-hash"></i> ID</div>
+                    <div class="detail-value" id="modalOrgId"></div>
+                </div>
+                <div class="detail-group">
+                    <div class="detail-label"><i class="bi bi-building"></i> Nom</div>
+                    <div class="detail-value" id="modalOrgNom"></div>
+                </div>
+                <div class="detail-group">
+                    <div class="detail-label"><i class="bi bi-file-text"></i> Description</div>
+                    <div class="detail-value" id="modalOrgDescription"></div>
+                </div>
+                <div class="detail-group">
+                    <div class="detail-label"><i class="bi bi-globe"></i> Site Web</div>
+                    <div class="detail-value" id="modalOrgWebsite"></div>
+                </div>
+                <div class="detail-group">
+                    <div class="detail-label"><i class="bi bi-currency-euro"></i> Montant Total Collecté</div>
+                    <div class="detail-value highlight" id="modalOrgMontant"></div>
+                </div>
+                <div class="detail-group">
+                    <div class="detail-label"><i class="bi bi-gift"></i> Nombre de Dons</div>
+                    <div class="detail-value" id="modalOrgDons"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

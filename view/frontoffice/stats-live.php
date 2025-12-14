@@ -13,7 +13,8 @@ $t = function($key, $params = []) use ($lang) {
 };
 
 $formatMoney = function($amount) use ($lang) { 
-    return $lang->formatMoney($amount); 
+    // Montants en base EUR -> convertir selon langue puis formater
+    return $lang->formatMoneyFromEUR($amount); 
 };
 
 // Récupérer les informations courantes

@@ -963,7 +963,7 @@ function createThumbnailIfNeeded($imagePath) {
 
             <nav class="sidebar-nav">
                 <div class="sidebar-nav-label">Navigation</div>
-                <a href="/projet-dons/backoffice.php" class="sidebar-link">
+                <a href="../../backoffice.php" class="sidebar-link">
                     <i class="bi bi-speedometer2"></i>
                     <span>Dashboard</span>
                 </a>

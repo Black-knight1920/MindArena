@@ -13,25 +13,23 @@ $t = function($key, $params = []) use ($lang) {
 };
 
 $formatMoney = function($amount) use ($lang) { 
-    // Toujours formater en euros
-    return number_format($amount, 2) . ' €';
+  // Formater un montant déjà dans la devise affichée
+  return $lang->formatMoneyDisplay($amount);
+};
+
+$formatMoneyFromEUR = function($amount) use ($lang) { 
+  // Convertir depuis EUR vers devise affichée puis formater
+  return $lang->formatMoneyFromEUR($amount);
 };
 
 $plural = function($key, $count, $params = []) use ($lang) { 
-    return $lang->plural($key, $count, $params); 
+  return $lang->plural($key, $count, $params); 
 };
 
 // Récupérer les informations courantes
 $currentLang = $lang->getCurrentLang();
 $supportedLangs = $lang->getSupportedLanguages();
-
-// Forcer l'euro pour toutes les langues
-$currencyInfo = [
-    'code' => 'EUR',
-    'symbol' => '€',
-    'name' => 'Euro',
-    'locale' => 'fr_FR'
-];
+$currencyInfo = $lang->getCurrencyInfo();
 
 // Contrôleurs
 $orgCtrl = new OrganisationController();
@@ -922,8 +920,8 @@ $objectifsParOrganisation = [
     </div>
     
     <div class="currency-indicator">
-      <i class="bi bi-currency-euro"></i>
-      EUR (€)
+      <i class="bi bi-currency-exchange"></i>
+      <?= $currencyInfo['code'] ?> (<?= $currencyInfo['symbol'] ?>)
     </div>
   </div>
 
@@ -975,9 +973,16 @@ $objectifsParOrganisation = [
         <?php 
         $index = 0;
         foreach ($organisations as $org): 
-          $montantTotal = $org['montant_total'] ?? 0;
+          // Montants en EUR depuis la base
+          $montantTotalEUR = $org['montant_total'] ?? 0;
           $orgId = $org['id'] ?? 0;
-          $objectif = $objectifsParOrganisation[$orgId] ?? 5000;
+          $objectifEUR = $objectifsParOrganisation[$orgId] ?? 5000;
+
+          // Conversion vers devise affichée
+          $montantTotal = $lang->convertFromEUR($montantTotalEUR);
+          $objectif = $lang->convertFromEUR($objectifEUR);
+
+          // Calculs sur la devise affichée
           $pourcentage = $objectif > 0 ? min(100, ($montantTotal / $objectif) * 100) : 0;
           $montantRestant = max(0, $objectif - $montantTotal);
           
@@ -1083,7 +1088,7 @@ $objectifsParOrganisation = [
       <br><small><?= $t('tagline') ?></small>
       <br><small style="opacity: 0.7;">
         <?= $t('current_language') ?>: <?= $supportedLangs[$currentLang]['name'] ?> | 
-        <?= $t('currency') ?>: EUR (€)
+        <?= $t('currency') ?>: <?= $currencyInfo['code'] ?> (<?= $currencyInfo['symbol'] ?>)
       </small>
     </p>
   </footer>

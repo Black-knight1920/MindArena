@@ -15,22 +15,39 @@ if (!$organisation) {
     exit;
 }
 
-// Récupérer les dons de cette organisation spécifique
+// NOUVEAU : Paramètres de pagination
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$perPage = isset($_GET['perPage']) ? (int)$_GET['perPage'] : 10;
+$offset = ($page - 1) * $perPage;
+
+// Récupérer le nombre total de dons pour cette organisation
+$sqlCount = "SELECT COUNT(*) as total FROM don WHERE organisationId = :organisationId";
+$db = config::getConnexion();
+$qCount = $db->prepare($sqlCount);
+$qCount->execute([':organisationId' => $organisationId]);
+$totalResult = $qCount->fetch();
+$totalDons = $totalResult['total'];
+
+// Récupérer les dons de cette organisation spécifique avec pagination
 $sql = "SELECT d.* 
         FROM don d 
         WHERE d.organisationId = :organisationId 
-        ORDER BY d.dateDon DESC, d.id DESC";
+        ORDER BY d.dateDon DESC, d.id DESC
+        LIMIT :limit OFFSET :offset";
 
-$db = config::getConnexion();
 $q = $db->prepare($sql);
-$q->execute([':organisationId' => $organisationId]);
+$q->bindValue(':organisationId', $organisationId, PDO::PARAM_INT);
+$q->bindValue(':limit', $perPage, PDO::PARAM_INT);
+$q->bindValue(':offset', $offset, PDO::PARAM_INT);
+$q->execute();
 $dons = $q->fetchAll();
 
-// Calculer le total des dons pour cette organisation
-$totalOrganisation = 0;
-foreach ($dons as $don) {
-    $totalOrganisation += $don['montant'];
-}
+// Calculer le total des dons pour cette organisation (TOUS les dons, pas seulement la page)
+$sqlTotal = "SELECT SUM(montant) as total FROM don WHERE organisationId = :organisationId";
+$qTotal = $db->prepare($sqlTotal);
+$qTotal->execute([':organisationId' => $organisationId]);
+$totalRow = $qTotal->fetch();
+$totalOrganisation = $totalRow['total'] ?: 0;
 
 // NOUVEAU : Définir les objectifs comme dans index.php du frontoffice
 $objectifsParOrganisation = [
@@ -55,6 +72,9 @@ $montantRestant = max(0, $objectif - $totalOrganisation);
 $imagePath = "../frontoffice/images/organisations/organisation_" . $organisationId . ".jpg";
 $defaultImagePath = "../frontoffice/images/organisations/default_org.jpg";
 $imageExists = file_exists($imagePath);
+
+// NOUVEAU : Calculer le nombre total de pages
+$totalPages = ceil($totalDons / $perPage);
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -649,7 +669,7 @@ $imageExists = file_exists($imagePath);
             letter-spacing: 0.5px;
         }
 
-        /* Tableau des dons */
+        /* Tableau des dons - CORRIGÉ */
         .modern-table {
             width: 100%;
             border-collapse: collapse;
@@ -675,7 +695,7 @@ $imageExists = file_exists($imagePath);
             padding: 16px;
             border-bottom: 1px solid var(--border-subtle);
             font-size: 0.95rem;
-            vertical-align: middle;
+            vertical-align: top;
         }
 
         .modern-table tr:last-child td {
@@ -684,6 +704,21 @@ $imageExists = file_exists($imagePath);
 
         .modern-table tr:hover {
             background: var(--primary-soft);
+        }
+
+        /* CORRECTION: Cible spécifiquement la colonne donateur (2ème colonne) des lignes de données */
+        tbody tr.data-row td {
+            padding-top: 20px;
+            padding-bottom: 20px;
+        }
+        
+        tbody tr.data-row td:nth-child(2) {
+            padding-top: 22px;
+        }
+
+        /* Pour la colonne ID (1ère colonne) - alignement avec le donateur */
+        tbody tr.data-row td:first-child {
+            padding-top: 22px;
         }
 
         /* Badge styles */
@@ -736,6 +771,19 @@ $imageExists = file_exists($imagePath);
             box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
         }
 
+        .btn-info {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-info:hover {
+            background: #3b82f6;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
         .btn-outline {
             background: transparent;
             color: var(--text-muted);
@@ -758,6 +806,129 @@ $imageExists = file_exists($imagePath);
             background: var(--primary-hover);
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        /* Modal styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 18px;
+            border: 1px solid var(--card-border);
+            box-shadow: var(--shadow-soft);
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 24px 30px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary-soft);
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            background: var(--primary);
+            color: white;
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .detail-group {
+            margin-bottom: 20px;
+        }
+
+        .detail-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .detail-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text);
+            padding: 12px 16px;
+            background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(168,85,247,0.1));
+            border-radius: 10px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .detail-value.highlight {
+            font-size: 1.5rem;
+            color: var(--success);
+            font-weight: 700;
         }
 
         /* Amount styling */
@@ -814,6 +985,72 @@ $imageExists = file_exists($imagePath);
             gap: 15px;
             margin-bottom: 25px;
             flex-wrap: wrap;
+        }
+
+        /* ================= PAGINATION STYLES ================= */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding: 15px 0;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .pagination-info {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .pagination-btn {
+            padding: 8px 14px;
+            border: 1px solid var(--border-subtle);
+            background: var(--card-bg);
+            color: var(--text);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(139,92,246,0.2);
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .pagination-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .items-per-page {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .items-per-page select {
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border-subtle);
+            background: var(--card-bg);
+            color: var(--text);
+            cursor: pointer;
         }
 
         /* Simple utilities */
@@ -880,7 +1117,7 @@ $imageExists = file_exists($imagePath);
 
             <nav class="sidebar-nav">
                 <div class="sidebar-nav-label">Navigation</div>
-                <a href="/projet-dons/backoffice.php" class="sidebar-link">
+                <a href="../../backoffice.php" class="sidebar-link">
                     <i class="bi bi-speedometer2"></i>
                     <span>Dashboard</span>
                 </a>
@@ -893,10 +1130,6 @@ $imageExists = file_exists($imagePath);
                 <a href="organisationList.php" class="sidebar-link active">
                     <i class="bi bi-building"></i>
                     <span>Organisations</span>
-                </a>
-                <a href="addOrganisation.php" class="sidebar-link">
-                    <i class="bi bi-plus-circle"></i>
-                    <span>Nouvelle Organisation</span>
                 </a>
             </nav>
 
@@ -1071,7 +1304,7 @@ $imageExists = file_exists($imagePath);
                                 <div class="stat-icon">
                                     <i class="bi bi-receipt"></i>
                                 </div>
-                                <div class="stat-value"><?= count($dons) ?></div>
+                                <div class="stat-value"><?= $totalDons ?></div>
                                 <div class="stat-label">Nombre de dons</div>
                             </div>
                             
@@ -1080,7 +1313,7 @@ $imageExists = file_exists($imagePath);
                                     <i class="bi bi-graph-up"></i>
                                 </div>
                                 <div class="stat-value">
-                                    <?= count($dons) > 0 ? number_format($totalOrganisation / count($dons), 2) : '0.00' ?> €
+                                    <?= $totalDons > 0 ? number_format($totalOrganisation / $totalDons, 2) : '0.00' ?> €
                                 </div>
                                 <div class="stat-label">Moyenne par don</div>
                             </div>
@@ -1133,7 +1366,7 @@ $imageExists = file_exists($imagePath);
                                                 $nomComplet = trim(($don['prenom_donateur'] ?? '') . ' ' . ($don['nom_donateur'] ?? ''));
                                             }
                                         ?>
-                                        <tr>
+                                        <tr class="data-row">
                                             <td><strong>#<?= $don['id'] ?></strong></td>
                                             <td class="donor-name">
                                                 <?php if (!empty($nomComplet)): ?>
@@ -1152,10 +1385,13 @@ $imageExists = file_exists($imagePath);
                                                 <?php endif; ?>
                                             </td>
                                             <td>
+                                                <button onclick="showDonDetails(<?= $don['id'] ?>, '<?= htmlspecialchars(addslashes($nomComplet ?: 'Anonyme'), ENT_QUOTES) ?>', '<?= number_format($don['montant'], 2) ?>', '<?= date('d/m/Y à H:i', strtotime($don['dateDon'])) ?>', '<?= htmlspecialchars(addslashes($don['typeDon']), ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($organisation['nom']), ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($don['email_donateur'] ?? ''), ENT_QUOTES) ?>')" class="btn btn-info" title="Détails">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
                                                 <a href="../don/deleteDon.php?id=<?= $don['id'] ?>" 
                                                    class="btn btn-danger" 
-                                                   onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce don ? Cette action est irréversible.')">
-                                                   <i class="bi bi-trash"></i>Supprimer
+                                                   onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce don ? Cette action est irréversible.');" title="Supprimer">
+                                                   <i class="bi bi-trash"></i>
                                                 </a>
                                             </td>
                                         </tr>
@@ -1172,9 +1408,61 @@ $imageExists = file_exists($imagePath);
                                     </tbody>
                                 </table>
                                 
-                                <div style="text-align: center; margin-top: 20px; color: var(--text-muted); font-size: 0.9rem;">
-                                    <i class="bi bi-info-circle me-1"></i>
-                                    <?= count($dons) ?> don(s) au total pour cette organisation
+                                <!-- Pagination PHP (remplace la pagination JavaScript) -->
+                                <div class="pagination-container">
+                                    <div class="pagination-info">
+                                        Affichage 
+                                        <span><?= ($totalDons > 0) ? $offset + 1 : 0 ?></span>-<span><?= min($offset + $perPage, $totalDons) ?></span> 
+                                        sur <span><?= $totalDons ?></span> dons
+                                    </div>
+                                    <div style="display: flex; gap: 4px; align-items: center;">
+                                        <?php if ($page > 1): ?>
+                                            <a href="?id=<?= $organisationId ?>&page=<?= $page - 1 ?>&perPage=<?= $perPage ?>" class="pagination-btn">← Précédent</a>
+                                        <?php else: ?>
+                                            <span class="pagination-btn" disabled>← Précédent</span>
+                                        <?php endif; ?>
+                                        
+                                        <div style="display: flex; gap: 4px;">
+                                            <?php
+                                            // Afficher les numéros de page
+                                            $startPage = max(1, $page - 2);
+                                            $endPage = min($totalPages, $page + 2);
+                                            
+                                            if ($startPage > 1) {
+                                                echo '<a href="?id=' . $organisationId . '&page=1&perPage=' . $perPage . '" class="pagination-btn">1</a>';
+                                                if ($startPage > 2) echo '<span style="color: var(--text-muted); padding: 8px 4px;">...</span>';
+                                            }
+                                            
+                                            for ($i = $startPage; $i <= $endPage; $i++): ?>
+                                                <?php if ($i == $page): ?>
+                                                    <span class="pagination-btn active"><?= $i ?></span>
+                                                <?php else: ?>
+                                                    <a href="?id=<?= $organisationId ?>&page=<?= $i ?>&perPage=<?= $perPage ?>" class="pagination-btn"><?= $i ?></a>
+                                                <?php endif; ?>
+                                            <?php endfor;
+                                            
+                                            if ($endPage < $totalPages) {
+                                                if ($endPage < $totalPages - 1) echo '<span style="color: var(--text-muted); padding: 8px 4px;">...</span>';
+                                                echo '<a href="?id=' . $organisationId . '&page=' . $totalPages . '&perPage=' . $perPage . '" class="pagination-btn">' . $totalPages . '</a>';
+                                            }
+                                            ?>
+                                        </div>
+                                        
+                                        <?php if ($page < $totalPages): ?>
+                                            <a href="?id=<?= $organisationId ?>&page=<?= $page + 1 ?>&perPage=<?= $perPage ?>" class="pagination-btn">Suivant →</a>
+                                        <?php else: ?>
+                                            <span class="pagination-btn" disabled>Suivant →</span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="items-per-page">
+                                        <label for="itemsPerPage">Afficher par page:</label>
+                                        <select id="itemsPerPage" onchange="changeItemsPerPage(this.value)">
+                                            <option value="10" <?= $perPage == 10 ? 'selected' : '' ?>>10</option>
+                                            <option value="25" <?= $perPage == 25 ? 'selected' : '' ?>>25</option>
+                                            <option value="50" <?= $perPage == 50 ? 'selected' : '' ?>>50</option>
+                                            <option value="100" <?= $perPage == 100 ? 'selected' : '' ?>>100</option>
+                                        </select>
+                                    </div>
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -1227,6 +1515,108 @@ $imageExists = file_exists($imagePath);
                 }, 300);
             }
         });
+
+        // ========== MODAL FUNCTIONS ==========
+        function showDonDetails(id, donor, amount, date, type, organisation, email) {
+            document.getElementById('modalDonId').textContent = '#' + id;
+            document.getElementById('modalDonor').textContent = donor;
+            document.getElementById('modalEmail').textContent = email || 'Non renseigné';
+            document.getElementById('modalAmount').textContent = amount + ' €';
+            document.getElementById('modalDate').textContent = date;
+            document.getElementById('modalType').textContent = type;
+            document.getElementById('modalOrganisation').textContent = organisation;
+            document.getElementById('donModal').classList.add('show');
+        }
+
+        function closeDonModal() {
+            document.getElementById('donModal').classList.remove('show');
+        }
+
+        // Close modal on overlay click
+        document.getElementById('donModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDonModal();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeDonModal();
+            }
+        });
+
+        // Function to change items per page
+        function changeItemsPerPage(value) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('perPage', value);
+            url.searchParams.set('page', 1); // Retour à la première page
+            window.location.href = url.toString();
+        }
+
+        // Number formatting
+        function number_format(number, decimals) {
+            number = (number + '').replace(/[^0-9+\-Ee.]/g, '');
+            const n = !isFinite(+number) ? 0 : +number;
+            const prec = !isFinite(+decimals) ? 0 : Math.abs(decimals);
+            return (Math.round(n * Math.pow(10, prec)) / Math.pow(10, prec)).toFixed(prec);
+        }
     </script>
+
+    <!-- Modal Détails Don -->
+    <div class="modal-overlay" id="donModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="bi bi-info-circle"></i> Détails du Don</h3>
+                <button class="modal-close" onclick="closeDonModal()">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-group">
+                    <div class="detail-label">
+                        <i class="bi bi-hash"></i> Numéro de Don
+                    </div>
+                    <div class="detail-value" id="modalDonId"></div>
+                </div>
+                <div class="detail-group">
+                    <div class="detail-label">
+                        <i class="bi bi-person"></i> Donateur
+                    </div>
+                    <div class="detail-value" id="modalDonor"></div>
+                </div>
+                <div class="detail-group">
+                    <div class="detail-label">
+                        <i class="bi bi-envelope"></i> Email
+                    </div>
+                    <div class="detail-value" id="modalEmail"></div>
+                </div>
+                <div class="detail-group">
+                    <div class="detail-label">
+                        <i class="bi bi-currency-euro"></i> Montant
+                    </div>
+                    <div class="detail-value highlight" id="modalAmount"></div>
+                </div>
+                <div class="detail-group">
+                    <div class="detail-label">
+                        <i class="bi bi-calendar"></i> Date du Don
+                    </div>
+                    <div class="detail-value" id="modalDate"></div>
+                </div>
+                <div class="detail-group">
+                    <div class="detail-label">
+                        <i class="bi bi-tag"></i> Type de Don
+                    </div>
+                    <div class="detail-value" id="modalType"></div>
+                </div>
+                <div class="detail-group">
+                    <div class="detail-label">
+                        <i class="bi bi-building"></i> Organisation
+                    </div>
+                    <div class="detail-value" id="modalOrganisation"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

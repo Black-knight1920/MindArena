@@ -1,7 +1,4 @@
 <?php
-// Page d'accueil du backoffice avec design moderne
-
-// Vérifier si les fichiers existant avant de les inclure
 $donControllerPath = __DIR__ . "/Controller/DonController.php";
 $orgControllerPath = __DIR__ . "/Controller/OrganisationController.php";
 
@@ -24,6 +21,23 @@ try {
     $dons = $donCtrl->listDon()->fetchAll();
     $organisations = $orgCtrl->listOrganisations();
 
+    // Gestion des notifications non lues (basé sur le dernier don vu)
+    $latestDonationId = !empty($dons) ? intval($dons[0]['id'] ?? 0) : 0; // $dons est déjà trié par id DESC
+    $lastSeenDonationId = isset($_COOKIE['last_seen_donation']) ? intval($_COOKIE['last_seen_donation']) : 0;
+    $unreadNotifications = 0;
+
+    if ($latestDonationId > 0) {
+        foreach ($dons as $don) {
+            $donId = intval($don['id'] ?? 0);
+            if ($donId > $lastSeenDonationId) {
+                $unreadNotifications++;
+            } else {
+                // Les dons sont ordonnés par date décroissante, on peut s'arrêter dès que l'on rencontre un don déjà vu
+                break;
+            }
+        }
+    }
+
     $totalDons = 0;
     foreach ($dons as $don) {
         $totalDons += $don['montant'];
@@ -39,6 +53,9 @@ try {
     $moyenneDon = 0;
     $dons = [];
     $organisations = [];
+    $latestDonationId = 0;
+    $lastSeenDonationId = 0;
+    $unreadNotifications = 0;
 }
 ?>
 <!DOCTYPE html>
@@ -54,7 +71,6 @@ try {
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     
     <style>
-        /* ================= THEME VARIABLES ================= */
         :root {
             --bg: #ffffff;
             --bg-soft: #f8fafc;
@@ -633,6 +649,523 @@ try {
             opacity: 0.5;
         }
 
+        /* ================= NOTIFICATIONS STYLES ================= */
+        .notifications-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .empty-notification {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .notification-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 16px;
+            border-radius: 12px;
+            background: var(--bg-soft);
+            border-left: 4px solid var(--primary);
+            transition: all 0.3s ease;
+        }
+
+        .notification-row:hover {
+            background: var(--card-bg);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transform: translateX(4px);
+        }
+
+        .notification-row.monetary {
+            border-left-color: #10b981;
+        }
+
+        .notification-row.material {
+            border-left-color: #f59e0b;
+        }
+
+        .notification-icon {
+            font-size: 24px;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .notification-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .notification-donor {
+            font-size: 0.95rem;
+            color: var(--text);
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
+
+        .notification-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .org-name {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .donation-type-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .donation-type-badge.monetary {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .donation-type-badge.material {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+        }
+
+        .time {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        /* ================= NOTIFICATION BADGE STYLES ================= */
+        .notification-bell {
+            position: relative;
+            cursor: pointer;
+            font-size: 20px;
+            color: var(--text-muted);
+            transition: color 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .notification-bell:hover {
+            color: var(--primary);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            width: 20px;
+            height: 20px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+            }
+            50% {
+                box-shadow: 0 4px 20px rgba(239, 68, 68, 0.8);
+            }
+        }
+
+        .notification-badge.empty {
+            display: none;
+        }
+
+        /* Notification Dropdown */
+        .notification-dropdown {
+            position: absolute;
+            top: 60px;
+            right: 0;
+            width: 400px;
+            max-height: 500px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .notification-dropdown.active {
+            display: flex;
+        }
+
+        .notification-dropdown-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .notification-dropdown-header h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .notification-dropdown-header .close-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: color 0.3s ease;
+        }
+
+        .notification-dropdown-header .close-btn:hover {
+            color: var(--text);
+        }
+
+        .notification-dropdown-list {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 400px;
+        }
+
+        .notification-dropdown-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .notification-dropdown-list::-webkit-scrollbar-track {
+            background: var(--bg-soft);
+        }
+
+        .notification-dropdown-list::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 3px;
+        }
+
+        .notification-dropdown-item {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--bg-soft);
+            display: flex;
+            gap: 12px;
+            transition: background 0.3s ease;
+            cursor: pointer;
+        }
+
+        .notification-dropdown-item:hover {
+            background: var(--bg-soft);
+        }
+
+        .notification-dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .notification-item-icon {
+            font-size: 24px;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .notification-item-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .notification-item-donor {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .notification-item-details {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .notification-dropdown-footer {
+            padding: 12px 20px;
+            border-top: 1px solid var(--card-border);
+            text-align: center;
+        }
+
+        .notification-dropdown-footer a {
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+
+        .notification-dropdown-footer a:hover {
+            color: var(--primary-hover);
+        }
+
+        /* ================= MODAL STYLES ================= */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            box-shadow: var(--shadow-soft);
+            max-width: 600px;
+            width: 90%;
+            max-height: 85vh;
+            overflow: hidden;
+            position: relative;
+            animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), #a855f7, var(--primary));
+            background-size: 200% 100%;
+            animation: shimmer 3s infinite linear;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-header {
+            padding: 28px 35px;
+            background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(168,85,247,0.05));
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h3 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .modal-header h3 i {
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, var(--primary), #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .modal-close {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: var(--primary-soft);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal-close:hover {
+            background: var(--primary);
+            color: white;
+            transform: rotate(90deg) scale(1.1);
+            box-shadow: 0 0 20px rgba(139,92,246,0.5);
+        }
+
+        .modal-body {
+            padding: 35px;
+            max-height: calc(85vh - 100px);
+            overflow-y: auto;
+        }
+
+        .modal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .modal-body::-webkit-scrollbar-track {
+            background: var(--bg-soft);
+            border-radius: 10px;
+        }
+
+        .modal-body::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+
+        .detail-group {
+            margin-bottom: 24px;
+            animation: fadeInUp 0.5s ease forwards;
+            opacity: 0;
+        }
+
+        .detail-group:nth-child(1) { animation-delay: 0.1s; }
+        .detail-group:nth-child(2) { animation-delay: 0.15s; }
+        .detail-group:nth-child(3) { animation-delay: 0.2s; }
+        .detail-group:nth-child(4) { animation-delay: 0.25s; }
+        .detail-group:nth-child(5) { animation-delay: 0.3s; }
+        .detail-group:nth-child(6) { animation-delay: 0.35s; }
+        .detail-group:nth-child(7) { animation-delay: 0.4s; }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .detail-label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .detail-label i {
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+
+        .detail-value {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--text);
+            padding: 16px 20px;
+            background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(168,85,247,0.1));
+            border-radius: 12px;
+            border: 1px solid var(--border-subtle);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .detail-value::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, var(--primary), #a855f7);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .detail-value:hover {
+            border-color: var(--primary);
+            transform: translateX(3px);
+        }
+
+        .detail-value:hover::before {
+            opacity: 1;
+        }
+
+        .detail-value.highlight {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(16,185,129,0.05));
+            border: 2px solid var(--success);
+            color: var(--success);
+            text-align: center;
+            box-shadow: 0 0 20px rgba(16,185,129,0.2);
+            animation: pulseAmount 2s infinite;
+        }
+
+        .detail-value.highlight::before {
+            width: 100%;
+            background: linear-gradient(90deg, transparent, rgba(16,185,129,0.3), transparent);
+        }
+
+        @keyframes pulseAmount {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(16,185,129,0.2);
+            }
+            50% {
+                box-shadow: 0 0 30px rgba(16,185,129,0.4);
+            }
+        }
+
         /* Simple utilities */
         .text-muted-small {
             font-size: 12px;
@@ -667,7 +1200,6 @@ try {
 
 <body class="light">
     <div class="admin-shell">
-        <!-- ======= Sidebar ======= -->
         <div class="admin-sidebar">
             <div class="sidebar-brand">
                 <div class="sidebar-logo">
@@ -696,11 +1228,6 @@ try {
                     <span>Organisations</span>
                 </a>
 
-                <div class="sidebar-nav-label">Outils</div>
-                <a href="View/frontoffice/stats-live.php" target="_blank" class="sidebar-link">
-                    <i class="bi bi-graph-up"></i>
-                    <span>Stats Live</span>
-                </a>
             </nav>
 
             <div class="sidebar-footer">
@@ -729,6 +1256,67 @@ try {
                 </div>
 
                 <div class="header-right">
+                    <!-- Notification Bell -->
+                    <div style="position: relative;">
+                        <div class="notification-bell" id="notificationBell" data-latest-id="<?php echo $latestDonationId; ?>">
+                            <i class="bi bi-bell"></i>
+                            <span class="notification-badge<?php echo ($unreadNotifications <= 0 ? ' empty' : ''); ?>" id="notificationBadge"><?php echo $unreadNotifications; ?></span>
+                        </div>
+
+                        <!-- Notification Dropdown -->
+                        <div class="notification-dropdown" id="notificationDropdown">
+                            <div class="notification-dropdown-header">
+                                <h3>📬 Notifications</h3>
+                                <button class="close-btn" id="closeNotificationBtn">×</button>
+                            </div>
+
+                            <div class="notification-dropdown-list" id="notificationList">
+                                <?php
+                                if (empty($dons)) {
+                                    echo '<div style="padding: 40px 20px; text-align: center; color: var(--text-muted);">Aucune notification</div>';
+                                } else {
+                                    $recentDons = array_slice($dons, 0, 10); // Afficher les 10 dernières notifications
+                                    foreach ($recentDons as $don) {
+                                        $nomDonateur = trim(($don['prenom_donateur'] ?? '') . ' ' . ($don['nom_donateur'] ?? ''));
+                                        $nomDonateur = empty($nomDonateur) ? 'Donateur Anonyme' : $nomDonateur;
+                                        $montant = number_format($don['montant'], 2, ',', ' ');
+                                        $typeDon = $don['typeDon'];
+                                        $organisationNom = htmlspecialchars($don['organisation_nom'] ?? 'Organisation');
+                                        $icon = $typeDon === 'Monétaire' ? '💵' : '📦';
+                                ?>
+                                    <div class="notification-dropdown-item" 
+                                         data-don-id="<?php echo htmlspecialchars($don['id']); ?>"
+                                         data-donor="<?php echo htmlspecialchars($nomDonateur); ?>"
+                                         data-email="<?php echo htmlspecialchars($don['email_donateur'] ?? ''); ?>"
+                                         data-amount="<?php echo htmlspecialchars($montant); ?>"
+                                         data-date="<?php echo htmlspecialchars($don['dateDon']); ?>"
+                                         data-type="<?php echo htmlspecialchars($typeDon); ?>"
+                                         data-org="<?php echo htmlspecialchars($organisationNom); ?>"
+                                         style="cursor: pointer;">
+                                        <div class="notification-item-icon"><?php echo $icon; ?></div>
+                                        <div class="notification-item-content">
+                                            <div class="notification-item-donor">
+                                                <?php echo htmlspecialchars($nomDonateur); ?>
+                                            </div>
+                                            <div class="notification-item-details">
+                                                <strong><?php echo $montant; ?> €</strong> pour <strong><?php echo $organisationNom; ?></strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php
+                                    }
+                                }
+                                ?>
+                            </div>
+
+                            <div class="notification-dropdown-footer">
+                                <a href="View/backoffice/don/notifications.php">
+                                    Voir toutes les notifications →
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="theme-toggle-wrap">
                         <span>Mode</span>
                         <div class="theme-toggle" id="themeToggle">
@@ -801,19 +1389,6 @@ try {
                                 </a>
                             </div>
                         </div>
-
-                        <div class="stat-card">
-                            <div class="stat-icon">
-                                <i class="bi bi-broadcast"></i>
-                            </div>
-                            <div class="stat-value">Live Stats</div>
-                            <div class="stat-title">En direct</div>
-                            <div class="stat-action">
-                                <a href="View/frontoffice/stats-live.php" target="_blank" class="btn btn-outline-primary">
-                                    <i class="bi bi-eye"></i>Voir en direct
-                                </a>
-                            </div>
-                        </div>
                     </div>
 
                     <!-- Quick Actions -->
@@ -844,18 +1419,8 @@ try {
                                 <i class="bi bi-box-arrow-up-right"></i>Visiter le Site
                             </a>
                         </div>
+                    </div>
 
-                        <div class="action-card">
-                            <div class="action-icon">
-                                <i class="bi bi-graph-up"></i>
-                            </div>
-                            <h3 class="action-title">Stats Live</h3>
-                            <p class="action-description">
-                                Visualiser et partager les statistiques en temps réel
-                            </p>
-                            <a href="View/frontoffice/stats-live.php" target="_blank" class="btn btn-primary">
-                                <i class="bi bi-broadcast"></i>Voir Stats Live
-                            </a>
                         </div>
                     </div>
                 </div>
@@ -907,6 +1472,149 @@ try {
                 }, index * 200);
             });
         });
+
+        // Notification Bell Toggle
+        const notificationBell = document.getElementById('notificationBell');
+        const notificationDropdown = document.getElementById('notificationDropdown');
+        const closeNotificationBtn = document.getElementById('closeNotificationBtn');
+        const notificationBadge = document.getElementById('notificationBadge');
+        const latestDonationId = notificationBell ? parseInt(notificationBell.dataset.latestId || '0', 10) : 0;
+
+        function setBadge(count) {
+            if (!notificationBadge) return;
+            const safeCount = Math.max(0, parseInt(count, 10) || 0);
+            notificationBadge.textContent = safeCount;
+            if (safeCount <= 0) {
+                notificationBadge.classList.add('empty');
+            } else {
+                notificationBadge.classList.remove('empty');
+            }
+        }
+
+        // Afficher/Masquer le dropdown
+        if (notificationBell) {
+            notificationBell.addEventListener('click', function(e) {
+                e.stopPropagation();
+                notificationDropdown.classList.toggle('active');
+
+                // Lorsque l'utilisateur ouvre le panneau, on marque comme vu
+                if (notificationDropdown.classList.contains('active')) {
+                    setBadge(0);
+                    if (latestDonationId > 0) {
+                        document.cookie = 'last_seen_donation=' + latestDonationId + ';path=/';
+                    }
+                }
+            });
+        }
+
+        // Fermer le dropdown avec le bouton X
+        if (closeNotificationBtn) {
+            closeNotificationBtn.addEventListener('click', function() {
+                notificationDropdown.classList.remove('active');
+            });
+        }
+
+        // Fermer le dropdown en cliquant ailleurs
+        document.addEventListener('click', function(e) {
+            if (!notificationDropdown.contains(e.target) && !notificationBell.contains(e.target)) {
+                notificationDropdown.classList.remove('active');
+            }
+        });
+
+        // Masquer le badge si aucune notification
+        setBadge(notificationBadge ? notificationBadge.textContent : 0);
+
+        // Auto-refresh des notifications (rafraîchit la page pour récupérer les nouveaux dons)
+        setInterval(function() {
+            location.reload();
+        }, 15000);
+
+        // ========== MODAL NOTIFICATION DETAILS ==========
+        // Add click event to notification items
+        document.querySelectorAll('.notification-dropdown-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const id = this.getAttribute('data-don-id');
+                const donor = this.getAttribute('data-donor');
+                const email = this.getAttribute('data-email');
+                const amount = this.getAttribute('data-amount');
+                const date = this.getAttribute('data-date');
+                const type = this.getAttribute('data-type');
+                const org = this.getAttribute('data-org');
+                
+                showDonDetails(id, donor, amount, date, type, org, email);
+                notificationDropdown.classList.remove('active');
+            });
+        });
+
+        function showDonDetails(id, donor, amount, date, type, organisation, email) {
+            document.getElementById('modalDonId').textContent = '#' + id;
+            document.getElementById('modalDonor').textContent = donor;
+            document.getElementById('modalEmail').textContent = email || 'Non renseigné';
+            document.getElementById('modalAmount').textContent = amount + ' €';
+            document.getElementById('modalDate').textContent = date;
+            document.getElementById('modalType').textContent = type;
+            document.getElementById('modalOrganisation').textContent = organisation;
+            document.getElementById('donModal').classList.add('show');
+        }
+
+        function closeDonModal() {
+            document.getElementById('donModal').classList.remove('show');
+        }
+
+        // Close modal on overlay click
+        document.getElementById('donModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDonModal();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeDonModal();
+            }
+        });
     </script>
+
+    <!-- Donation Detail Modal -->
+    <div class="modal-overlay" id="donModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="bi bi-info-circle"></i> Détails du Don</h3>
+                <button class="modal-close" onclick="closeDonModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-group">
+                    <div class="detail-label"><i class="bi bi-hash"></i> Identifiant</div>
+                    <div class="detail-value" id="modalDonId"></div>
+                </div>
+                <div class="detail-group">
+                    <div class="detail-label"><i class="bi bi-person"></i> Donateur</div>
+                    <div class="detail-value" id="modalDonor"></div>
+                </div>
+                <div class="detail-group">
+                    <div class="detail-label"><i class="bi bi-envelope"></i> Email</div>
+                    <div class="detail-value" id="modalEmail"></div>
+                </div>
+                <div class="detail-group">
+                    <div class="detail-label"><i class="bi bi-currency-euro"></i> Montant</div>
+                    <div class="detail-value highlight" id="modalAmount"></div>
+                </div>
+                <div class="detail-group">
+                    <div class="detail-label"><i class="bi bi-calendar-event"></i> Date du Don</div>
+                    <div class="detail-value" id="modalDate"></div>
+                </div>
+                <div class="detail-group">
+                    <div class="detail-label"><i class="bi bi-tag"></i> Type de Don</div>
+                    <div class="detail-value" id="modalType"></div>
+                </div>
+                <div class="detail-group">
+                    <div class="detail-label"><i class="bi bi-building"></i> Organisation</div>
+                    <div class="detail-value" id="modalOrganisation"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

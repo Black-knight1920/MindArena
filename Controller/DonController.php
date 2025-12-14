@@ -3,8 +3,10 @@ require_once __DIR__."/../config.php";
 require_once __DIR__."/../Model/Don.php";
 
 class DonController {
+    public function __construct() {
+    }
     
-    public function addDon(Don $don) {
+    public function addDon(Don $don, $langue = 'fr') {
         //validation avant insertion
         $validationErrors = $this->validateDon($don);
         if (!empty($validationErrors)) {
@@ -13,7 +15,7 @@ class DonController {
         }
         
         $sql = "INSERT INTO don (montant, dateDon, typeDon, organisationId, nom_donateur, prenom_donateur) 
-                VALUES (:montant, :dateDon, :typeDon, :organisationId, :nomDonateur, :prenomDonateur)";
+            VALUES (:montant, :dateDon, :typeDon, :organisationId, :nomDonateur, :prenomDonateur)";
         $db = config::getConnexion();
         $q = $db->prepare($sql);
         $result = $q->execute([
@@ -35,12 +37,12 @@ class DonController {
 
     public function listDon() {
         $sql = "SELECT d.*, o.nom as organisation_nom,
-                (SELECT COALESCE(SUM(d2.montant), 0) 
-                FROM don d2 
-                WHERE d2.organisationId = o.id) as montant_total_organisation
-                FROM don d 
-                LEFT JOIN organisation o ON d.organisationId = o.id 
-                ORDER BY d.dateDon DESC";
+            (SELECT COALESCE(SUM(d2.montant), 0) 
+            FROM don d2 
+            WHERE d2.organisationId = o.id) as montant_total_organisation
+            FROM don d 
+            LEFT JOIN organisation o ON d.organisationId = o.id 
+            ORDER BY d.id DESC";
         $db = config::getConnexion();
         return $db->query($sql);
     }

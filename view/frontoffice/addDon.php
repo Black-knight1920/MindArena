@@ -9,7 +9,8 @@ $t = function($key, $params = []) use ($lang) {
     return $lang->translate($key, $params); 
 };
 $formatMoney = function($amount) use ($lang) { 
-    return $lang->formatMoney($amount); 
+  // Formater selon la langue (USD si EN, sinon EUR)
+  return $lang->formatMoneyDisplay($amount); 
 };
 
 $currentLang = $lang->getCurrentLang();
@@ -77,22 +78,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['montant'])) {
         $errors['prenom_donateur'] = $t('error_firstname_min_length');
     } else if (strlen($prenomDonateur) > 50) {
         $errors['prenom_donateur'] = $t('error_firstname_max_length');
-    }
-    
-    // Validation email retirée
-    
+    }    
     if (empty($errors)) {
-        try {
-            $don = new Don(
-                null,
-                $montant,
-                new DateTime($dateDon),
-                $typeDon,
-                $organisationId,
-                null, // Email retiré - null au lieu de $emailDonateur
-                $nomDonateur,
-                $prenomDonateur
-            );
+      try {
+        // Convertir en EUR si la langue est anglaise (saisie en USD)
+        $montantEnEUR = $lang->convertToEUR($montant);
+            
+        $don = new Don(
+          null,
+          $montantEnEUR,
+          new DateTime($dateDon),
+          $typeDon,
+          $organisationId,
+          null, 
+          $nomDonateur,
+          $prenomDonateur
+        );
             
             $validationErrors = $donCtrl->validateDon($don);
             if (empty($validationErrors)) {
@@ -899,6 +900,8 @@ if ($selectedOrgId) {
       }
     }
   </style>
+  <!-- Stripe.js -->
+  <script src="https://js.stripe.com/v3/"></script>
 </head>
 
 <body>
@@ -1102,14 +1105,30 @@ if ($selectedOrgId) {
                 <div class="error-message" id="typeDonError"></div>
               </div>
             </div>
+
+            <!-- Payment Section -->
+            <div style="margin-top: 40px; padding-top: 30px; border-top: 1px solid rgba(255,77,240,0.2);">
+              <h3 style="color: #fff; margin-bottom: 20px; font-size: 1.2rem;">
+                <i class="bi bi-credit-card"></i> <?= $t('payment_method') ?? 'Méthode de paiement' ?>
+              </h3>
+              
+              <div style="background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(168,85,247,0.1)); 
+                          padding: 20px; 
+                          border-radius: 12px; 
+                          border: 1px solid rgba(168,85,247,0.3);
+                          margin-bottom: 20px;">
+                <div id="card-element" style="color: #fff;"></div>
+                <div id="card-errors" style="color: #ff4b5c; margin-top: 10px; font-size: 0.9rem;"></div>
+              </div>
+            </div>
             
             <div class="form-actions">
               <a href="index.php" class="btn-back-modern">
                 <i class="bi bi-arrow-left"></i> <?= $t('back_home') ?>
               </a>
               <button type="submit" class="btn-submit-modern" id="submitBtn">
-                <i class="bi bi-gift-fill"></i>
-                <span><?= $t('complete_donation') ?></span>
+                <i class="bi bi-credit-card"></i>
+                <span><?= $t('donate_by_card') ?? 'Donner par carte' ?></span>
               </button>
             </div>
             
@@ -1566,6 +1585,7 @@ if ($selectedOrgId) {
     // Initialiser le validateur quand le DOM est chargé
     document.addEventListener('DOMContentLoaded', () => {
       new FormValidator();
+      initStripePayment();
       
       // Animation de fond pour le header au scroll
       window.addEventListener('scroll', function() {
@@ -1588,6 +1608,164 @@ if ($selectedOrgId) {
         changeLanguage(savedLang);
       }
     });
+
+    // Stripe Payment Integration
+    let stripe, cardElement;
+
+    function initStripePayment() {
+      // IMPORTANT: Remplacer par votre clé publique Stripe
+      const publishableKey = 'pk_test_YOUR_KEY_HERE'; // À remplacer avec votre clé publique
+      
+      // Initialiser Stripe
+      stripe = Stripe(publishableKey);
+      const elements = stripe.elements();
+      
+      // Créer l'élément de carte
+      cardElement = elements.create('card', {
+        style: {
+          base: {
+            fontSize: '16px',
+            color: '#fff',
+            fontFamily: 'Roboto, sans-serif',
+            '::placeholder': {
+              color: 'rgba(255, 255, 255, 0.5)',
+            },
+          },
+          invalid: {
+            color: '#ff4b5c',
+          },
+        },
+      });
+      
+      // Monter l'élément de carte
+      cardElement.mount('#card-element');
+      
+      // Afficher les erreurs de la carte
+      cardElement.addEventListener('change', function(event) {
+        const displayError = document.getElementById('card-errors');
+        if (event.error) {
+          displayError.textContent = event.error.message;
+        } else {
+          displayError.textContent = '';
+        }
+      });
+      
+      // Gérer la soumission du formulaire de paiement
+      const form = document.getElementById('donForm');
+      if (form) {
+        form.addEventListener('submit', handleFormSubmit);
+      }
+    }
+
+    function handleFormSubmit(event) {
+      // Ne pas soumettre le formulaire immédiatement
+      // Le FormValidator va gérer la validation et appeler stripe si tout est bon
+      const submitBtn = document.getElementById('submitBtn');
+      if (submitBtn && submitBtn.dataset.processing === 'true') {
+        event.preventDefault();
+        return;
+      }
+    }
+
+    // Intégrer Stripe au système de validation
+    const originalFormValidatorInit = FormValidator.prototype.init;
+    FormValidator.prototype.initFormSubmit = function() {
+      const form = document.getElementById('donForm');
+      const submitBtn = document.getElementById('submitBtn');
+      
+      if (form) {
+        form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          this.validatedOnce = true;
+          
+          // Valider tous les champs
+          const isValid = this.validateAll();
+          
+          if (isValid) {
+            // Procéder au paiement Stripe
+            processStripePayment(form, submitBtn, this);
+          } else {
+            // Afficher le résumé des erreurs
+            this.showValidationSummary();
+            
+            // Scroll vers le haut du formulaire
+            this.validationSummary.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'start' 
+            });
+          }
+        });
+      }
+    };
+
+    async function processStripePayment(form, submitBtn, validator) {
+      // Désactiver le bouton
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<i class="bi bi-hourglass-split"></i> ${validator.getTranslation('processing')}...`;
+      submitBtn.dataset.processing = 'true';
+      
+      try {
+        // Créer un PaymentIntent côté serveur
+        const response = await fetch('./process-payment.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            montant: parseFloat(document.getElementById('montant').value),
+            devise: '<?= $currencyInfo['code'] ?>'
+          })
+        });
+        
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Erreur serveur');
+        }
+
+        // Mode simulation (Stripe non installé) - soumettre directement
+        if (data.skipPayment === true) {
+          console.log('Mode simulation - Formulaire soumis directement');
+          form.submit();
+          return;
+        }
+
+        // Mode production - traiter avec Stripe
+        if (!data.clientSecret) {
+          throw new Error('Erreur serveur: clientSecret non reçu');
+        }
+        
+        // Utiliser Stripe pour traiter le paiement
+        const {paymentIntent, error} = await stripe.confirmCardPayment(
+          data.clientSecret,
+          {
+            payment_method: {
+              card: cardElement,
+              billing_details: {
+                name: `${document.getElementById('prenomDonateur').value} ${document.getElementById('nomDonateur').value}`
+              }
+            }
+          }
+        );
+        
+        if (error) {
+          // Afficher l'erreur
+          document.getElementById('card-errors').textContent = error.message;
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = `<i class="bi bi-credit-card"></i> <span>${validator.getTranslation('donate_by_card') || 'Donner par carte'}</span>`;
+          submitBtn.dataset.processing = 'false';
+        } else if (paymentIntent.status === 'succeeded') {
+          // Le paiement a réussi - soumettre le formulaire
+          form.submit();
+        }
+      } catch (err) {
+        console.error('Erreur:', err);
+        document.getElementById('card-errors').textContent = err.message || 'Une erreur est survenue';
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<i class="bi bi-credit-card"></i> <span>${validator.getTranslation('donate_by_card') || 'Donner par carte'}</span>`;
+        submitBtn.dataset.processing = 'false';
+      }
+    }
   </script>
 
 </body>
